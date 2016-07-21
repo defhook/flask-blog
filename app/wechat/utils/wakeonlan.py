@@ -71,9 +71,15 @@ def send_magic_packet(*macs, **kwargs):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    ports = set(7, 9)
+    ports = {7, 9}
     ports.add(port)
     for packet in packets:
         for p in ports:
             sock.sendto(packet, (ip, p))
     sock.close()
+
+
+def _get_broadcast_ip():
+    myip = socket.gethostbyname(socket.gethostname())
+    return socket.inet_ntoa(socket.inet_aton(myip)[:3] + b'\xff')
+
