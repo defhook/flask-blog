@@ -12,7 +12,8 @@ import socket
 import struct
 
 BROADCAST_IP = '255.255.255.255'
-BROADCAST_PORT = 7  # or 9
+BROADCAST_PORT = 9  # or 7
+BROADCAST_PWD = None
 
 
 def create_magic_packet(macaddress, pwd=None):
@@ -53,20 +54,23 @@ def send_magic_packet(*macs, **kwargs):
     enabled on that host.
     Keyword arguments:
     :arguments macs: One or more macaddresses of machines to wake.
-    :key ip_address: the ip address of the host to send the magic packet
+    :key ip: the ip address of the host to send the magic packet
                      to (default "255.255.255.255")
     :key port: the port of the host to send the magic packet to
                (default 9)
+    :key pwd: the password of the host to send the magic packet to
+               (default None)
     """
     packets = []
-    ip = kwargs.pop('ip_address', BROADCAST_IP)
+    ip = kwargs.pop('ip', BROADCAST_IP)
     port = kwargs.pop('port', BROADCAST_PORT)
+    pwd = kwargs.pop('pwd', BROADCAST_PWD)
     for k in kwargs:
         raise TypeError('send_magic_packet() got an unexpected keyword '
                         'argument {!r}'.format(k))
 
     for mac in macs:
-        packet = create_magic_packet(mac)
+        packet = create_magic_packet(mac, pwd)
         packets.append(packet)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -77,9 +81,3 @@ def send_magic_packet(*macs, **kwargs):
         for p in ports:
             sock.sendto(packet, (ip, p))
     sock.close()
-
-
-def _get_broadcast_ip():
-    myip = socket.gethostbyname(socket.gethostname())
-    return socket.inet_ntoa(socket.inet_aton(myip)[:3] + b'\xff')
-
