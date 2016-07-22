@@ -6,4 +6,4 @@ from flask import Blueprint
 
 wechat = Blueprint('wechat', __name__, static_folder='static', template_folder='templates')
 
-import views
+from . import views

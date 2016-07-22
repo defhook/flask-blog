@@ -25,4 +25,4 @@ app.register_blueprint(wechat, url_prefix='/weixin')
 db = SQLAlchemy(app)
 
 # 导入主视图
-import index
+from . import index
