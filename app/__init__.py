@@ -4,11 +4,13 @@
 from __future__ import print_function, unicode_literals, absolute_import
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from .ws import ws
 from .wechat import wechat
 from .blog import blog
 import os
 
 app = Flask(__name__, instance_relative_config=True)
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # 加载配置
@@ -23,6 +25,9 @@ app.register_blueprint(wechat, url_prefix='/weixin')
 
 # 加载数据库
 db = SQLAlchemy(app)
+
+# 初始化websocket
+ws.init_app(app)
 
 # 导入主视图
 from . import index

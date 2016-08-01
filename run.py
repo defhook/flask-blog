@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from app import app
+from app import app, ws
 
 if __name__ == '__main__':
-    app.run()
+    ws.run(app)
