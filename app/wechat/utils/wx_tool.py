@@ -49,7 +49,7 @@ def init_wechat_sdk():
     jsapi_ticket = db.get("wechat:jsapi_ticket")
     token_expires_at = db.get("wechat:access_token_expires_at")
     ticket_expires_at = db.get("wechat:jsapi_ticket_expires_at")
-    if access_token and jsapi_ticket and token_expires_at and ticket_expires_at:
+    if all((access_token, jsapi_ticket, token_expires_at, ticket_expires_at)):
         wechat = WechatBasic(appid=app.config['APP_ID'],
                              appsecret=app.config['APP_SECRET'],
                              token=app.config['TOKEN'],

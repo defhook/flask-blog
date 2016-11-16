@@ -1,0 +1,104 @@
+{% extends "bootstrap/base.html" %}
+
+{% macro show_title() -%}
+    OAOA的小站
+{%- endmacro %}
+
+{% block title %}{{ show_title() }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+
+<!--custom head-->
+<meta charset="UTF-8">
+<link rel="shortcut icon" href="{{ url_for('blog.static', filename='img/favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='css/styles.css') }}">
+<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
+{% endblock %}
+
+{% block navbar %}
+<div class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('blog.index') }}">OAOA与213的流水</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <div id="cd-nav">
+                <a href="#0" class="cd-nav-trigger">Menu<span></span></a>
+                <div id="cd-main-nav">
+                    <ul class="nav navbar-nav">
+                        <li><a href="{{ url_for('blog.index') }}">HOME</a></li>
+                        <!-- 把资料页面的链接包含在条件语句中是非常必要的,因为未认证的用户也能看到导航条,但我们不应该让他们看到资料页面的链接。 -->
+                        <li><a href="{{ url_for('blog.article') }}">BLOG</a></li>
+                        <li><a href="{{ url_for('blog.resume') }}">RESUME</a></li>
+                        <li><a href="{{ url_for('blog.lab') }}">LAB</a></li>
+                        <li><a href="{{ url_for('blog.contact') }}">CONTACT</a></li>
+                        {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('blog.user', username=current_user.username) }}">PROFILE</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <ul class="nav navbar-nav navbar-right">
+                <!-- 为了管理评论我们要在导航条中添加一个链接具有权限的用户才能看到。这个链接在base.html 模板中使用条件语句添加 -->
+                {% if current_user.can(Permission.MODERATE_COMMENTS) %}
+                <li><a href="{{ url_for('blog.moderate') }}">MODERATE COMMENTS</a></li>
+                {% endif %}
+                <!-- 
+                判断条件中的变量 current_user 由 Flask-Login 定义,且在视图函数和模板中自动可用。 这个变量的值是当前登录的用户,如果用户尚未登录,则是一个匿名用户代理对象。
+                如果是匿名用户,is_authenticated属性返回 False。
+                所以这个方法可用来判断当前用户是否已经登录。
+                -->
+                <!-- 刚刚下面这个写成(),就报错了，注意没括号啊 -->
+                {% if current_user.is_authenticated %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <img class="img-rounded navbar-avatar" src="{{ current_user.avatar() }}">
+                        {{ current_user.username }} <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('blog.change_password') }}">CHANGE PASSWORD</a></li>
+                        <li><a href="{{ url_for('blog.logout') }}">LOG OUT</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li><a href="{{ url_for('blog.login') }}">LOG IN / REGISTER</a></li>
+                {% endif %}
+            </ul>
+        </div> 
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{# <div class="container-fluid"> #}
+{# <div class="row"> #}
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+<!--
+在模板中使用循环是因为在之前的请求循环中每次调用 flash() 函数时都会生成一个消息, 
+所以可能有多个消息在排队等待显示。get_flashed_messages() 函数获取的消息在下次调用时不会再次返回,
+因此 Flash 消息只显示一次,然后就消失了。
+-->
+    {% block page_content %}{% endblock %}
+{# </div> #}
+{# </div> #}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{{ moment.include_moment() }}
+{{ moment.lang('zh-cn') }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}
+

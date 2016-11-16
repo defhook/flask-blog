@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+<!-- pagination_widget 宏可放在 index.html 和 user.html 中的 _posts.html 模板后面 -->
+{% import "_macros.html" as macros %}
+
+{% block title %}{{ show_title() }} - 文章{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='css/styles.css') }}">
+{% endblock %}
+
+{% block page_content %}
+    {% if current_user.can(Permission.WRITE_ARTICLES) %}
+    <div class="write-article-body">
+    <a class="btn btn-primary" href="{{ url_for('.article_new') }}">写新文章</a>
+    {% endif %}
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12 col-md-9">
+            {% include '_posts.html' %}
+
+            {% if pagination %}
+            <div class="pagination">{{ macros.pagination_widget(pagination, '.article') }}</div>
+            {% endif %}
+        </div>
+        <div class="col-xs-12 col-md-3 article-sidebar-margin-top">
+        {% include '_article_sidebar.html' %}
+        </div>       
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script type="text/javascript" src="{{ url_for('blog.static', filename='js/smart_navigation.js') }}"></script>
+{{ pagedown.include_pagedown() }}
+{% endblock %}
