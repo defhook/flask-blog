@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from wtforms import ValidationError
 from app.blog.models import User
 
 
-class LoginForm(Form):
+class LoginForm(FlaskForm):
     email = StringField('邮箱', validators=[DataRequired(), Length(1, 64), Email()])
     password = PasswordField('密码', validators=[DataRequired()])
     remember_me = BooleanField('记住我')
     submit = SubmitField('登陆')
 
 
-class RegistrationForm(Form):
+class RegistrationForm(FlaskForm):
     email = StringField('邮箱', validators=[DataRequired(), Length(1, 64), Email()])
     """
     这个表单使用 WTForms 提供的 Regexp 验证函数,确保 username 字段只包含字母、数字、下划线和点号。
@@ -42,7 +42,7 @@ class RegistrationForm(Form):
             raise ValidationError('用户名已被使用啦 ╮(￣▽￣)╭')
 
 
-class ChangePasswordForm(Form):
+class ChangePasswordForm(FlaskForm):
     old_password = PasswordField('当前密码', validators=[DataRequired()])
     password = PasswordField('新密码', validators=[
         DataRequired(), EqualTo('password2', message='两次密码要一样噢~')])
@@ -50,12 +50,12 @@ class ChangePasswordForm(Form):
     submit = SubmitField('确认修改密码')
 
 
-class PasswordResetRequestForm(Form):
+class PasswordResetRequestForm(FlaskForm):
     email = StringField('邮箱', validators=[DataRequired(), Length(1, 64), Email()])
     submit = SubmitField('重设密码')
 
 
-class PasswordResetForm(Form):
+class PasswordResetForm(FlaskForm):
     email = StringField('邮箱', validators=[DataRequired(), Length(1, 64), Email()])
     password = PasswordField('新密码', validators=[
         DataRequired(), EqualTo('password2', message='两次密码要一样噢~')])

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
 from wtforms import ValidationError
@@ -10,20 +10,20 @@ from flask_pagedown.fields import PageDownField
 from app.blog.models import Role, User
 
 
-class NameForm(Form):
+class NameForm(FlaskForm):
     name = StringField('你的名字是什么？', validators=[DataRequired()])
     submit = SubmitField('提交')
 
 
 # 这个表单中的所有字段都是可选的,因此长度验证函数允许长度为零
-class EditProfileForm(Form):
+class EditProfileForm(FlaskForm):
     name = StringField('真实姓名', validators=[Length(0,64)])
     location = StringField('地点', validators=[Length(0,64)])
     about_me = TextAreaField('关于我')
     submit = SubmitField('提交')
 
 
-class EditProfileAdminForm(Form):
+class EditProfileAdminForm(FlaskForm):
     email = StringField('邮箱', validators=[DataRequired(), Length(1, 64), Email()])
     username = StringField('用户名', validators=[DataRequired(), Length(1, 64)])
     # confirmed = BooleanField('Confirmed')
@@ -55,7 +55,7 @@ class EditProfileAdminForm(Form):
             raise ValidationError('用户名已被使用啦 ╮(￣▽￣)╭')
 
 
-class PostForm(Form):
+class PostForm(FlaskForm):
     # 若想把首页中的多行文本控件转换成 Markdown 富文本编辑器,PostForm 表单中的 body 字段要进行修改
     title = TextAreaField("编辑文章_标题", validators=[DataRequired()])
     intro = TextAreaField("编辑文章_简介")
@@ -64,7 +64,7 @@ class PostForm(Form):
     submit = SubmitField('提交')
 
 
-class CommentForm(Form):
+class CommentForm(FlaskForm):
     body = PageDownField(
         '评论支持部分 Markdown 语法( <a href="http://wowubuntu.com/markdown/basic.html" target="_blank">Markdown 语法快速入门</a> )',
         validators=[DataRequired()])

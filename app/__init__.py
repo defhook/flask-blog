@@ -10,10 +10,9 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_pagedown import PageDown
-from flask_cache import Cache
-from flask_blogging import BloggingEngine
-# from flask_blogging import SQLAStorage
-from markdown.extensions.codehilite import CodeHiliteExtension
+
+from .database import blog_engine
+
 
 import os
 
@@ -28,8 +27,6 @@ mail = Mail()
 bootstrap = Bootstrap()
 moment = Moment()
 pagedown = PageDown()
-blog_engine = BloggingEngine(extensions=CodeHiliteExtension({}))
-cache = Cache()
 
 
 def create_app():
@@ -54,7 +51,7 @@ def create_app():
     login_master.session_protection = 'strong'
     login_master.init_app(app)
     pagedown.init_app(app)
-    blog_engine.init_app(app, cache)
+    database.init_db(app, db)
     ws.init_app(app)
 
     if not app.config['DEBUG'] and not app.config['DEV']:
