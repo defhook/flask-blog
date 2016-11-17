@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, MetaData
 from flask_blogging import SQLAStorage, BloggingEngine
 from flask_cache import Cache
 from markdown.extensions.codehilite import CodeHiliteExtension
+from flask_sqlalchemy import SQLAlchemy
 
 
 blog_engine = BloggingEngine(extensions=CodeHiliteExtension({}))
@@ -15,9 +16,10 @@ blog_engine = BloggingEngine(extensions=CodeHiliteExtension({}))
 #                                          bind=engine))
 # Base = declarative_base()
 # Base.query = db_session.query_property()
+db = SQLAlchemy()
 
 
-def init_db(app, db):
+def init_app(app):
     """
     http://flask.pocoo.org/docs/0.11/patterns/sqlalchemy/
     :return:
@@ -25,6 +27,7 @@ def init_db(app, db):
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
     meta = MetaData()
     cache = Cache()
+    db.init_app(app)
     sql_storage = SQLAStorage(engine=engine, metadata=meta, db=db)
 
     meta.create_all(bind=engine)
