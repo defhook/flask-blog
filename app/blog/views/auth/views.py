@@ -94,7 +94,7 @@ def change_password():
 
 @blog.route('/reset', methods=['GET', 'POST'])
 def password_reset_request():
-    if not current_user.is_anonymous:
+    if current_user.is_anonymous:
         return redirect(url_for('blog.index'))
     form = PasswordResetRequestForm()
     if form.validate_on_submit():
@@ -106,14 +106,14 @@ def password_reset_request():
                        user=user, token=token,
                        next=request.args.get('next'))
         flash('已向 %s 发送了一封邮件，请从邮件重设你的密码 o(*￣▽￣*)ブ' % form.email.data)
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('blog.login'))
     return render_template('./auth/reset_password.html', form=form)
 
 
 @blog.route('/reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
-    if not current_user.is_anonymous:
-        return redirect(url_for('main.index'))
+    if current_user.is_anonymous:
+        return redirect(url_for('blog.index'))
     form = PasswordResetForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function, unicode_literals, absolute_import, with_statement
 from sqlalchemy import create_engine, MetaData
 # from sqlalchemy.orm import scoped_session, sessionmaker
 # from sqlalchemy.ext.declarative import declarative_base
@@ -28,7 +29,7 @@ def init_app(app):
     meta = MetaData()
     cache = Cache()
     db.init_app(app)
-    sql_storage = SQLAStorage(engine=engine, metadata=meta, db=db)
-
-    meta.create_all(bind=engine)
+    with app.app_context():
+        sql_storage = SQLAStorage(engine=engine, metadata=meta, db=db)
+        meta.create_all(bind=engine)
     blog_engine.init_app(app, sql_storage, cache)
