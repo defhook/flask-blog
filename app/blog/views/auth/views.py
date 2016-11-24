@@ -94,7 +94,7 @@ def change_password():
 
 @blog.route('/reset', methods=['GET', 'POST'])
 def password_reset_request():
-    if current_user.is_anonymous:
+    if not current_user.is_anonymous:
         return redirect(url_for('blog.index'))
     form = PasswordResetRequestForm()
     if form.validate_on_submit():
@@ -112,7 +112,7 @@ def password_reset_request():
 
 @blog.route('/reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
-    if current_user.is_anonymous:
+    if not current_user.is_anonymous:
         return redirect(url_for('blog.index'))
     form = PasswordResetForm()
     if form.validate_on_submit():
