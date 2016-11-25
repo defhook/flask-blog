@@ -72,7 +72,7 @@
                     <span class="label label-primary">{{ post.comments.count() }}条评论</span>
                 </a>
                 <a href="{{ url_for('.post', id=post.id) }}">
-                    <span class="label label-default">{{ post.view_times }}次阅读</span>
+                    <span class="label label-default">{{ post.view_times or 0 }}次阅读</span>
                 </a>
             </div>
         </div>
