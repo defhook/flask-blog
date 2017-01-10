@@ -35,3 +35,10 @@ def deploy():
 
     # 让所有用户都关注此用户
     User.add_self_follows()
+
+
+@master.command
+def test():
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
