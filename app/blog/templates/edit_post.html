@@ -26,4 +26,5 @@
 {% block scripts %}
 {{ super() }}
 {{ pagedown.include_pagedown() }}
+<script src="{{ url_for('blog.static', filename='ckeditor/ckeditor.js') }}"></script>
 {% endblock %}

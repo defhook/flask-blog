@@ -8,12 +8,17 @@
 
 {% block head %}
 {{ super() }}
-
-<!--custom head-->
-<meta charset="UTF-8">
 <link rel="shortcut icon" href="{{ url_for('blog.static', filename='img/favicon.svg') }}" type="image/svg+xml">
+{% endblock %}
+
+{% block metas %}
+{{ super() }}
+    <meta charset="UTF-8">
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='css/styles.css') }}">
-<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
 {% endblock %}
 
 {% block navbar %}
@@ -96,9 +101,10 @@
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
-{{ moment.include_moment() }}
-{{ moment.lang('zh-cn') }}
-{{ pagedown.include_pagedown() }}
+    {{ super() }}
+    <script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
+    {{ moment.include_moment() }}
+    {{ moment.lang('zh-cn') }}
+    {{ pagedown.include_pagedown() }}
 {% endblock %}
 

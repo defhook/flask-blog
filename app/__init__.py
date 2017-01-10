@@ -3,7 +3,6 @@
 
 from __future__ import print_function, unicode_literals, absolute_import
 
-from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 from flask import Flask
 from flask_login import LoginManager
@@ -11,7 +10,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_pagedown import PageDown
 
-from .database import blog_engine
+from .database import blog_engine, db
 
 
 import os
@@ -21,7 +20,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 # 加载插件
-db = SQLAlchemy()
+
 login_master = LoginManager()
 mail = Mail()
 bootstrap = Bootstrap()
@@ -47,11 +46,10 @@ def create_app():
     bootstrap.init_app(app)
     mail.init_app(app)
     moment.init_app(app)
-    db.init_app(app)
     login_master.session_protection = 'strong'
     login_master.init_app(app)
     pagedown.init_app(app)
-    database.init_db(app, db)
+    database.init_app(app)
     ws.init_app(app)
 
     if not app.config['DEBUG'] and not app.config['DEV']:

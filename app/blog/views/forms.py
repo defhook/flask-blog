@@ -7,7 +7,9 @@ from wtforms import StringField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
-from app.blog.models import Role, User
+# from app.blog.models import Role, User
+from ..models import Role, User
+from .ckforms import CKEditorField
 
 
 class NameForm(FlaskForm):
@@ -59,8 +61,8 @@ class PostForm(FlaskForm):
     # 若想把首页中的多行文本控件转换成 Markdown 富文本编辑器,PostForm 表单中的 body 字段要进行修改
     title = TextAreaField("编辑文章_标题", validators=[DataRequired()])
     intro = TextAreaField("编辑文章_简介")
-    body = PageDownField("编辑文章_正文", validators=[DataRequired()])
-    category_name = StringField("分类", validators=[Length(0,64)])
+    body = CKEditorField("编辑文章_正文", validators=[DataRequired()])
+    category_name = StringField("分类", validators=[Length(0, 64)])
     submit = SubmitField('提交')
 
 
