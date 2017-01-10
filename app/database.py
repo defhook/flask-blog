@@ -23,10 +23,10 @@ db = SQLAlchemy()
 def init_app(app):
     """
     http://flask.pocoo.org/docs/0.11/patterns/sqlalchemy/
+    http://piotr.banaszkiewicz.org/blog/2012/06/29/flask-sqlalchemy-init_app/
     :return:
     """
-    # http://piotr.banaszkiewicz.org/blog/2012/06/29/flask-sqlalchemy-init_app/
-    db.app = app
+
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
     meta = MetaData()
     cache = Cache()
