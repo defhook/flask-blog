@@ -10,7 +10,8 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_login import UserMixin, AnonymousUserMixin
 from markdown import markdown
 from app import login_master, blog_engine
-import bleach, hashlib
+import bleach
+import hashlib
 from .. import db
 
 
@@ -302,6 +303,9 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+    def __str__(self):
+        return self.name
 
 
 # 出于一致性考虑,我们还定义了 AnonymousUser 类,并实现了 can() 方法和 is_administrator() 方法。
