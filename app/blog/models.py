@@ -12,7 +12,7 @@ from markdown import markdown
 from app import login_master, blog_engine
 import bleach
 import hashlib
-from .. import db
+from app.extensions import db
 
 
 class Permission(object):

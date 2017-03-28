@@ -399,6 +399,7 @@ def moderate_disable(id):
 @blog.route('/article_new', methods=['GET', 'POST'])
 @permission_required(Permission.WRITE_ARTICLES)
 def article_new():
+    return redirect(url_for('blogging.editor'))
     form = PostForm()
     if current_user.can(Permission.WRITE_ARTICLES) and form.validate_on_submit():
         """

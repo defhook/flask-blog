@@ -3,63 +3,18 @@
 
 from __future__ import print_function, unicode_literals, absolute_import
 
-from flask_bootstrap import Bootstrap
 from flask import Flask
-from flask_login import LoginManager
-from flask_mail import Mail
-from flask_moment import Moment
-from flask_pagedown import PageDown
-
-from .database import blog_engine, db
-
+from flask_blogging import SQLAStorage
+from sqlalchemy import create_engine
+from .extensions import *
 
 import os
 
-
 basedir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__, instance_relative_config=True)
 
 
-# 加载插件
-
-login_master = LoginManager()
-mail = Mail()
-bootstrap = Bootstrap()
-moment = Moment()
-pagedown = PageDown()
-
-
-def create_app():
-    app = Flask(__name__, instance_relative_config=True)
-
-    # 加载配置
-    app.config.from_pyfile(os.path.join(basedir, '../config.py'))
-    app.config.from_pyfile('config_dev.py')
-    __init_app(app)
-
-    # 注册蓝图
-    app.register_blueprint(blog, url_prefix='/blog')
-    app.register_blueprint(blog, url_prefix='/')
-    app.register_blueprint(wechat, url_prefix='/wechat')
-    app.register_blueprint(wechat, url_prefix='/weixin')
-
-    # 初始化插件
-    bootstrap.init_app(app)
-    mail.init_app(app)
-    moment.init_app(app)
-    login_master.session_protection = 'strong'
-    login_master.init_app(app)
-    pagedown.init_app(app)
-    database.init_app(app)
-    ws.init_app(app)
-
-    if not app.config['DEBUG'] and not app.config['DEV']:
-        from flask_sslify import SSLify
-        SSLify(app, subdomains=True)
-    
-    return app
-
-
-def __init_app(app):
+def init_mail():
     import logging
     from logging.handlers import SMTPHandler
     mail_handler = SMTPHandler(
@@ -74,8 +29,46 @@ def __init_app(app):
     app.logger.addHandler(mail_handler)
 
 
+def init_app():
+    # 加载配置
+    app.config.from_pyfile(os.path.join(basedir, '../config.py'))
+    app.config.from_pyfile('config_dev.py')
+
+    # 注册蓝图
+    app.register_blueprint(blog, url_prefix='/blog')
+    # app.register_blueprint(blog, url_prefix='/')
+    # app.register_blueprint(wechat, url_prefix='/wechat')
+    # app.register_blueprint(wechat, url_prefix='/weixin')
+
+    # 初始化插件
+    mail_engine.init_app(app)
+    db.init_app(app)
+    cache.init_app(app)
+    bootstrap.init_app(app)
+    moment.init_app(app)
+    page_down.init_app(app)
+    principal.init_app(app)
+    login_master.init_app(app)
+    init_mail()
+
+    login_master.session_protection = 'strong'
+
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
+    with app.app_context():
+        sql_storage = SQLAStorage(engine=engine, metadata=meta, db=db)
+    # meta.create_all(bind=engine)
+    blog_engine.init_app(app, sql_storage, cache)
+    # ws.init_app(app)
+
+    if not app.config['DEBUG'] and not app.config['DEV']:
+        from flask_sslify import SSLify
+        SSLify(app, subdomains=True)
+
+
 # 导入模块
-from .wechat_channel import ws
-from .wechat import wechat
+# from .wechat_channel import ws
+# from .wechat import wechat
 from .blog import blog
 from . import index
+
+init_app()

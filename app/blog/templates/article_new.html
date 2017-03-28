@@ -1,6 +1,8 @@
-{% extends "base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
+{# extends "base.html" #}
+{% extends "blogging/editor.html" %}
+{# import "bootstrap/wtf.html" as wtf #}
 
+{#
 {% block title %}{{ show_title() }} - 写新文章{% endblock %}
 
 {% block page_content %}
@@ -16,6 +18,5 @@
 {% block scripts %}
 {{ super() }}
 {{ pagedown.include_pagedown() }}
-<!--<script src="//cdn.ckeditor.com/4.6.0/standard/ckeditor.js"></script>-->
-<script src="{{ url_for('blog.static', filename='ckeditor/ckeditor.js') }}"></script>
 {% endblock %}
+#}

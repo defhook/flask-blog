@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from flask import render_template, redirect, request, url_for, flash
+from flask import render_template, redirect, request, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_principal import (identity_changed, Identity,
+                             AnonymousIdentity)
 from app.blog.models import User
 from .forms import LoginForm, RegistrationForm, ChangePasswordForm, PasswordResetRequestForm, PasswordResetForm
-from app import db, login_master
+from app import db
 from app.email import send_email
 from app.blog import blog
 
@@ -24,6 +26,9 @@ def login():
             # “记住我”布尔值如果值为 False,那么关闭浏览器后用户会话就过期了,所以下次用户访问时要重新登录。
             # 如果值为 True,那么会在用户浏览器中写入一个长期有效的 cookie,使用这个 cookie 可以复现用户会话
             login_user(user, form.remember_me.data)
+
+            # notify the change of role
+            identity_changed.send(current_app, identity=Identity(user.id))
             """
             按照第 4 章介绍的“Post/ 重定向 /Get 模式”,提交登录密令的 POST 请求最后也做了重定向,不过目标 URL 有两种可能:
             用户访问未授权的 URL 时会显示登录表单,Flask-Login 会把原地址保存在查询字符串的 next 参数中,这个参数可从 request.args 字典中读取。
@@ -54,6 +59,8 @@ def login():
 def logout():
     # 调用 Flask-Login 中的 logout_user() 函数,删除并重设用户会话
     logout_user()
+    # notify the change of role
+    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
     flash('你已退出。ヾ(￣▽￣)Bye~Bye~')
     return redirect(url_for('blog.index'))
 

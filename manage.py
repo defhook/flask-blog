@@ -4,11 +4,12 @@
 from __future__ import print_function, unicode_literals, absolute_import
 from flask_migrate import MigrateCommand, Migrate
 from flask_script import Manager, Shell
-from . import create_app, db
-from app.blog.models import User, Follow, Role, Permission, Post, Comment, HomePage
+from flask_principal import (identity_loaded, UserNeed, RoleNeed)
+from flask_login import current_user
+from app import app
+from app.extensions import db
+from app.blog.models import User, Role, Permission, Post
 
-
-app = create_app()
 master = Manager(app)
 migrate = Migrate(app, db)
 
@@ -42,3 +43,11 @@ def test():
     import unittest
     tests = unittest.TestLoader().discover('tests')
     unittest.TextTestRunner(verbosity=2).run(tests)
+
+
+@identity_loaded.connect_via(app)
+def on_identity_loaded(sender, identity):
+    identity.user = current_user
+    if hasattr(current_user, "id"):
+        identity.provides.add(UserNeed(current_user.id))
+    identity.provides.add(RoleNeed(current_user.role.name))
