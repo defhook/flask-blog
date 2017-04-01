@@ -19,7 +19,7 @@ def is_safe_url(target):
 
 
 def get_redirect_target():
-    for target in request.args.get('next'), request.referrer:
+    for target in (request.args.get('next'), request.referrer):
         if not target:
             continue
         if is_safe_url(target):
@@ -31,7 +31,8 @@ class RedirectForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.next.data = get_redirect_target() or ''
+        if not self.next.data:
+            self.next.data = get_redirect_target() or ''
 
     def redirect(self, endpoint='index', **values):
         if is_safe_url(self.next.data):

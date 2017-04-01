@@ -10,6 +10,7 @@ from . import views
 from . import models
 from app import permissions
 
+
 @blog.app_context_processor
 def inject_permissions():
     """

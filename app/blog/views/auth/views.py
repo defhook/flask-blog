@@ -17,10 +17,8 @@ from app.blog import blog
 @blog.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    # db.create_all() 别人说先这个方法没用啊
     if form.validate_on_submit():
         # 反正可以运行到下面这句话之前，而且form.email.data是存在的。用print试过了。
-        # login and validate the user... 在此处去执行回调函数，说明还是回调那里的问题，跟这边应该无关。通过回调函数的验证才能继续执行下面的代码
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.verify_password(form.password.data):
             # “记住我”布尔值如果值为 False,那么关闭浏览器后用户会话就过期了,所以下次用户访问时要重新登录。
