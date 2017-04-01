@@ -5,104 +5,56 @@ from __future__ import print_function, unicode_literals, absolute_import
 
 from datetime import datetime
 from flask import current_app
+from werkzeug.utils import cached_property, escape
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_login import UserMixin, AnonymousUserMixin
 from markdown import markdown
-from app import login_master, blog_engine
+from app import login_master
+from app.extensions import db
+from app.permissions import permission_admin, permission_moderator, permission_blogger
 import bleach
 import hashlib
-from app.extensions import db
+import urllib
 
-
-class Permission(object):
-    FOLLOW = 0x01
-    COMMENT = 0x02
-    WRITE_ARTICLES = 0x04
-    MODERATE_COMMENTS = 0x08
-    ADMINISTER = 0x80
+users_roles = db.Table('users_roles',
+             # meta,
+             db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+             db.Column('role_id', db.Integer, db.ForeignKey('roles.id')))
 
 
 class Role(db.Model):
-    __tablename__ = 'roles'  # 开始忘了写表名了。表名规定用复数
+    __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    # 只有一个角色的 default 字段要设为 True,其他都设为 False。用户注册时,其角色会被设为默认角色。
-    default = db.Column(db.Boolean, default=False, index=True)
-    # permissions 字段的值是一个整数,表示位标志。各操作都对应一个位位置,能执行某项操作的角色,其位会被设为 1。
-    permissions = db.Column(db.Integer)
-    users = db.relationship('User', backref='role', lazy='dynamic')
+    description = db.Column(db.String(255))
 
-    # 加入了lazy = 'dynamic'参数,从而禁止自动执行查询
-    # 这样配置关系之后,user_role.users 会返回一个尚未执行的查询,因此可以在其上添加过滤器
-
-    @staticmethod
-    def insert_roles():
-        roles = {
-            'User': (Permission.FOLLOW |
-                     Permission.COMMENT, True),
-            'Moderator': (Permission.FOLLOW |
-                          Permission.COMMENT |
-                          Permission.WRITE_ARTICLES |
-                          Permission.MODERATE_COMMENTS, False),
-            'Administrator': (0xff, False)
-        }
-        for r in roles:
-            role = Role.query.filter_by(name=r).first()
-            if role is None:
-                role = Role(name=r)
-            role.permissions = roles[r][0]
-            role.default = roles[r][1]
-            db.session.add(role)
-        db.session.commit()
-        """
-        insert_roles() 函数并不直接创建新角色对象,而是通过角色名查找现有的角色,然后再进行更新。
-        只有当数据库中没有某个角色名时才会创建新角色对象。如此一来,如果以后更新了角色列表,就可以执行更新操作了。
-        要想添加新角色,或者修改角色的权限,修改 roles 数组,再运行函数即可。
-        注意,“匿名”角色不需要在数据库中表示出来,这个角色的作用就是为了表示不在数据库中的用户。
-        """
+    def __init__(self, *args, **kwargs):
+        super(Role, self).__init__(*args, **kwargs)
 
     def __repr__(self):
         return '<Role %r>' % self.name
 
 
-class Follow(db.Model):
-    __tablename__ = 'follows'
-    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class User(db.Model, UserMixin):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    # 在这个程序中,用户使用电子邮件地址登录
     email = db.Column(db.String(64), unique=True, index=True)
     username = db.Column(db.String(64), unique=True, index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    nickname = db.Column(db.String(64))
     password_hash = db.Column(db.String(128))
-    # 由于模型中新加入了一个列用来保存账户的确认状态,因此要生成并执行一个新数据库迁移。
-    # confirmed = db.Column(db.Boolean, default=False)
-    name = db.Column(db.String(64))
-    location = db.Column(db.String(64))
     # db.String 和 db.Text 的区别在于后者不需要指定最大长度
-    about_me = db.Column(db.Text())
+    about_me = db.Column(db.String(100))
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
-    """
-    两个时间戳的默认值都是当前时间。
-    注意,datetime.utcnow 后面没有 (),因为 db.Column() 的 default 参数可以接受函数作为默认值,
-    所以每次需要生成默认值时,db.Column() 都会调用指定的函数。member_since 字段只需要默认值即可。
-    """
-    avatar_hash = db.Column(db.String(32))
-    posts = db.relationship('Post', backref='author', lazy='dynamic', cascade='all, delete-orphan')
-    """
-    SQLAlchemy 不能直接使用Follow这个模型,因为如果这么做程序就无法访问其中的自定义字段。
-    相反地,要把这个多对多关系的左右两侧拆分成两个基本的一对多关系,而且要定义成标准的关系
-    在这段代码中,followed 和 followers 关系都定义为单独的一对多关系
-    """
-    # 为了消除外键间的歧义,定义关系时必须使用可选参数 foreign_keys 指定的外键。
-    # db.backref() 参数并不是指定这两个关系之间的引用关系,而是回引 Follow 模型。
+    posts = db.relationship('Post', backref='author', lazy='dynamic',
+                            cascade='all, delete-orphan')
+    roles = db.relationship(
+        'Role',
+        secondary=users_roles,
+        backref=db.backref('users', lazy='dynamic')
+    )
+
     """
     回引中的 lazy 参数指定为 joined。这个 lazy 模式可以实现立即从联结查询中加载相关对象
 
@@ -112,7 +64,8 @@ class User(db.Model, UserMixin):
     如果把 lazy 设为默认值 select,那么首次访问 follower 和 followed 属性时才会加载对应的用户,
     而且每个属性都需要一个单独的查询,这就意味着获取全部被关注用户时需要增加 100 次额外的数据库查询。
     """
-    # lazy 参数都在“一”这一侧设定, 返回的结果是“多”这一侧中的记录。使用dynamic则关系属性不会直接返回记录,而是返回查询对象,所以在执行查询之前还可以添加额外的过滤器。
+    # lazy 参数都在“一”这一侧设定, 返回的结果是“多”这一侧中的记录。
+    # 使用dynamic则关系属性不会直接返回记录,而是返回查询对象,所以在执行查询之前还可以添加额外的过滤器。
     """
     cascade 参数配置在父对象上执行的操作对相关对象的影响。
     比如,层叠选项可设定为: 将用户添加到数据库会话后,要自动把所有关系的对象都添加到会话中。
@@ -123,16 +76,16 @@ class User(db.Model, UserMixin):
     cascade 参数的值是一组由逗号分隔的层叠选项.all 表示除了 delete-orphan 之外的所有层叠选项。
     设为 all, delete-orphan 的意思是启用所有默认层叠选项,而且还要删除孤儿记录。
     """
-    followed = db.relationship('Follow',
-                               foreign_keys=[Follow.follower_id],
-                               backref=db.backref('follower', lazy='joined'),
-                               lazy='dynamic',
-                               cascade='all, delete-orphan')
-    followers = db.relationship('Follow',
-                                foreign_keys=[Follow.followed_id],
-                                backref=db.backref('followed', lazy='joined'),
-                                lazy='dynamic',
-                                cascade='all, delete-orphan')
+    # followed = db.relationship('Follow',
+    #                            foreign_keys=[Follow.follower_id],
+    #                            backref=db.backref('follower', lazy='joined'),
+    #                            lazy='dynamic',
+    #                            cascade='all, delete-orphan')
+    # followers = db.relationship('Follow',
+    #                             foreign_keys=[Follow.followed_id],
+    #                             backref=db.backref('followed', lazy='joined'),
+    #                             lazy='dynamic',
+    #                             cascade='all, delete-orphan')
     # 为了完成对数据库的修改,User 和 Post 模型还要建立与 comments 表的一对多关系
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -162,31 +115,9 @@ class User(db.Model, UserMixin):
                 db.session.rollback()
                 # 这个异常的处理方式是,在继续操作之前回滚会话。在循环中生成重复内容时不会把用户写入数据库,因此生成的虚拟用户总数可能会比预期少
 
-    @staticmethod
-    def add_self_follows():
-        for user in User.query.all():
-            if not user.is_following(user):
-                user.follow(user)
-                db.session.add(user)
-                db.session.commit()
-
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         # User 类的构造函数首先调用基类的构造函数,如果创建基类对象后还没定义角色,则根据电子邮件地址决定将其设为管理员还是默认角色。
-        super(User, self).__init__(**kwargs)
-        if self.email == current_app.config['FLASKY_ADMIN']:
-            self.role = Role.query.filter_by(permissions=0xff).first()
-            self.role = Role(permissions=0xff)
-            self.role_id = 2
-        if self.role is None:
-            if self.email == current_app.config['FLASKY_ADMIN']:
-                self.role = Role.query.filter_by(permissions=0xff).first()
-                self.role = Role(permissions=0xff)
-                self.role_id = 2
-            if self.role is None:
-                self.role = Role.query.filter_by(default=True).first()
-        if self.email is not None and self.avatar_hash is None:
-            self.avatar_hash = hashlib.md5(self.email.encode('utf-8')).hexdigest()
-        self.followed.append(Follow(followed=self))
+        super(User, self).__init__(*args, **kwargs)
 
     """
     Python内置的@property装饰器就是负责把一个方法变成属性调用的.
@@ -219,7 +150,7 @@ class User(db.Model, UserMixin):
         try:
             # 为了解码令牌,序列化对象提供了 loads() 方法,其唯一的参数是令牌字符串
             data = s.loads(token)
-        except:
+        except Exception:
             return False
         if data.get('confirm') != self.id:
             return False
@@ -243,17 +174,22 @@ class User(db.Model, UserMixin):
         db.session.add(self)
         return True
 
-        # can() 方法在请求和赋予角色这两种权限之间进行位与操作。如果角色中包含请求的所有权限位,则返回 True,表示允许用户执行此项操作。
-
-    def can(self, permissions):
-        return self.role is not None and (self.role.permissions & permissions) == permissions
-
     # 检查管理员权限的功能经常用到,因此使用单独的方法 is_administrator() 实现。
+    @cached_property
     def is_administrator(self):
-        return self.can(Permission.ADMINISTER)
+        return permission_admin.allows(self)
 
+    @cached_property
     def is_moderator(self):
-        return self.can(Permission.MODERATE_COMMENTS)
+        return permission_moderator.allows(self)
+
+    @property
+    def is_authenticated(self):
+        return not isinstance(self, AnonymousUserMixin)
+
+    @property
+    def is_blogger(self):
+        return permission_blogger.allows(self)
 
     # last_seen 字段创建时的初始值也是当前时间,但用户每次访问网站后,这个值都会被刷新。所以添加此处的方法完成这个操作
     def ping(self):
@@ -262,14 +198,17 @@ class User(db.Model, UserMixin):
 
     # 每次收到用户的请求时都要调用 ping() 方法。由于 auth 蓝本中的 before_app_request 处理程序会在每次请求前运行,所以能很轻松地实现这个需求
 
+    @cached_property
     def avatar(self):
-        """
-        生成头像时要生成 MD5 值,这是一项 CPU 密集型操作。如果要在某个页面中生成大量头像,计算量会非常大。
-        由于用户电子邮件地址的 MD5 散列值是不变的,因此可以将其缓存在 User 模型中。
-        若要把 MD5 散列值保存在数据库中,需要对 User 模型做些改动.
-        """
-        hash = self.avatar_hash or hashlib.md5(self.email.encode('utf-8')).hexdigest()
-        return 'http://dev.evuez.net/dev/identicons/?s=' + hash
+        # Set your variables here
+        email = self.email
+        default = 'monsterid'
+        size = 40
+
+        # construct the url
+        gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(email.lower().encode('utf-8')).hexdigest() + "?"
+        gravatar_url += urllib.parse.urlencode({'d':default, 's':str(size)})
+        return gravatar_url
 
     """
     follow() 方法手动把 Follow 实例插入关联表,从而把关注者和被关注者联接起来,并让程序有机会设定自定义字段的值。
@@ -278,16 +217,12 @@ class User(db.Model, UserMixin):
     """
 
     def follow(self, user):
-        if not self.is_following(user):
-            f = Follow(followed=user)
-            self.followed.append(f)
+        pass
 
     # unfollow() 方法使用 followed 关系找到联接用户和被关注用户的 Follow 实例。
     # 若要销毁这 两个用户之间的联接,只需删除这个 Follow 对象即可。
     def unfollow(self, user):
-        f = self.followed.filter_by(followed_id=user.id).first()
-        if f:
-            self.followed.remove(f)
+        pass
 
     def is_following(self, user):
         return self.followed.filter_by(followed_id=user.id).first() is not None
@@ -296,31 +231,39 @@ class User(db.Model, UserMixin):
     def is_followed_by(self, user):
         return self.followers.filter_by(follower_id=user.id).first() is not None
 
-    # 注意,followed_posts() 方法定义为属性,因此调用时无需加 ()
-    @property
-    def followed_posts(self):
-        return Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
-
     def __repr__(self):
         return '<User %r>' % self.username
 
     def __str__(self):
-        return self.name
+        return self.nickname
 
 
 # 出于一致性考虑,我们还定义了 AnonymousUser 类,并实现了 can() 方法和 is_administrator() 方法。
 class AnonymousUser(AnonymousUserMixin):
-    def can(self, permissions):
-        return False
+    provides = []
 
+    @cached_property
     def is_administrator(self):
         return False
 
+    @cached_property
     def is_moderator(self):
         return False
 
+    @cached_property
+    def is_authenticated(self):
+        return False
 
-# 将 AnonymousUser 类设为用户未登录时 current_user 的值。这样程序不用先检查用户是否登录,就能自由调用 current_user.can() 和 current_user.is_administrator()。
+    @cached_property
+    def is_blogger(self):
+        return False
+
+    def allows(self, identity):
+        return False
+
+
+# 将 AnonymousUser 类设为用户未登录时 current_user 的值。
+# 这样程序不用先检查用户是否登录,就能自由调用 current_user.can() 和 current_user.is_administrator()。
 login_master.anonymous_user = AnonymousUser
 
 """
@@ -333,7 +276,6 @@ Flask-Login 要求程序实现一个回调函数,使用指定的标识符加载�
 
 
 @login_master.user_loader
-@blog_engine.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
@@ -346,9 +288,10 @@ class Post(db.Model):
     intro = db.Column(db.Text)
     # intro_html = db.Column(db.Text)
     body = db.Column(db.Text)
-    body_html = db.Column(db.Text)
-    body_show = db.Column(db.Boolean, default=True)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    publish = db.Column(db.Boolean, default=True)  # 不公开的文章只有moderator及以上才可见
+    post_date = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    last_modified_date = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
     # 和 User 模型之间是一对多关系
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')

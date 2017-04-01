@@ -1,4 +1,4 @@
-{% extends "blogging/base.html" %}
+{% extends "bootstrap/base.html" %}
 
 {% macro show_title() -%}
     OAOA的小站
@@ -52,7 +52,7 @@
             </div>
             <ul class="nav navbar-nav navbar-right">
                 <!-- 为了管理评论我们要在导航条中添加一个链接具有权限的用户才能看到。这个链接在base.html 模板中使用条件语句添加 -->
-                {% if current_user.can(Permission.MODERATE_COMMENTS) %}
+                {% if current_user.is_authenticated  %}
                 <li><a href="{{ url_for('blog.moderate') }}">MODERATE COMMENTS</a></li>
                 {% endif %}
                 <!-- 
@@ -64,7 +64,7 @@
                 {% if current_user.is_authenticated %}
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <img class="img-rounded navbar-avatar" src="{{ current_user.avatar() }}">
+                        <img class="img-rounded navbar-avatar" src="{{ current_user.avatar }}">
                         {{ current_user.username }} <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">

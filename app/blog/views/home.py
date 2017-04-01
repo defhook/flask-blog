@@ -5,11 +5,11 @@ from __future__ import print_function, unicode_literals, absolute_import
 from flask import render_template, redirect, url_for, abort, flash, request, current_app, make_response
 from flask_login import login_required, current_user
 from flask_sqlalchemy import get_debug_queries
-from app.blog.models import Role, User, Permission, Post, Comment, Category, HomePage
+from app.blog.models import Role, User, Post, Comment, Category, HomePage
 from app import db
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
 from .. import blog
-from app.decorators import admin_required, permission_required
+from app.permissions import permission_blogger, permission_admin
 
 
 # 为会出现分类列表的排序做准备，涉及到路由'/post/<int:id>'、'/article'和'/article/<category_name>'
@@ -124,7 +124,7 @@ def edit_profile():
 
 @blog.route('/edit-profile/<int:id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@permission_blogger.require(403)
 # 用户由 id 指定
 def edit_profile_admin(id):
     # 使用 Flask-SQLAlchemy 提供的 get_or_404() 函数,如果提供的 id 不正确,则会返回 404 错误。
@@ -160,6 +160,7 @@ def edit_profile_admin(id):
 
 # 博客文章的 URL 使用插入数据库时分配的唯一 id 字段构建
 @blog.route('/post/<int:id>', methods=['GET', 'POST'])
+@permission_blogger.require(403)
 def post(id):
     post = Post.query.get_or_404(id)
     post.body_show = True
@@ -224,12 +225,12 @@ def post(id):
 
 
 @blog.route('/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
+@permission_blogger.require(403)
 def edit(id):
     post = Post.query.get_or_404(id)
     if post.category_id:
         category = Category.query.get_or_404(post.category_id)
-    if current_user != post.author and not current_user.can(Permission.ADMINISTER):
+    if current_user.id != post.author_id:
         abort(403)
     # 这里使用 的 PostForm 表单类和首页中使用的是同一个。
     form = PostForm()
@@ -262,7 +263,7 @@ def edit(id):
 # 用户在其他用户的资料页中点击“Follow”(关注)按钮后,执行的是/follow/<username>路由。
 @blog.route('/follow/<username>')
 @login_required
-@permission_required(Permission.FOLLOW)
+@permission_admin.require(403)
 def follow(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
@@ -278,7 +279,7 @@ def follow(username):
 
 @blog.route('/unfollow/<username>')
 @login_required
-@permission_required(Permission.FOLLOW)
+@permission_admin.require(403)
 def unfollow(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
@@ -357,7 +358,7 @@ def show_followed():
 # 这个函数很简单,它从数据库中读取一页评论,将其传入模板进行渲染。除了评论列表之外,还把分页对象和当前页数传入了模板。
 @blog.route('/moderate')
 @login_required
-@permission_required(Permission.MODERATE_COMMENTS)
+@permission_blogger.require(403)
 def moderate():
     page = request.args.get('page', 1, type=int)
     pagination = Comment.query.order_by(Comment.timestamp.desc()).paginate(
@@ -376,7 +377,7 @@ _comments.html 模板中的按钮指定了 page 参数,重定向后会返回之�
 
 @blog.route('/moderate/enable/<int:id>')
 @login_required
-@permission_required(Permission.MODERATE_COMMENTS)
+@permission_blogger.require(403)
 def moderate_enable(id):
     comment = Comment.query.get_or_404(id)
     comment.disabled = False
@@ -387,7 +388,7 @@ def moderate_enable(id):
 
 @blog.route('/moderate/disable/<int:id>')
 @login_required
-@permission_required(Permission.MODERATE_COMMENTS)
+@permission_blogger.require(403)
 def moderate_disable(id):
     comment = Comment.query.get_or_404(id)
     comment.disabled = True
@@ -397,7 +398,7 @@ def moderate_disable(id):
 
 
 @blog.route('/article_new', methods=['GET', 'POST'])
-@permission_required(Permission.WRITE_ARTICLES)
+@permission_blogger.require(403)
 def article_new():
     return redirect(url_for('blogging.editor'))
     form = PostForm()
@@ -471,7 +472,7 @@ def article():
     为了能够很便利地配置每页显示的记录数量,参数 per_page 的值从程序的环境变量 FLASKY_POSTS_PER_PAGE 中读取。
     所以去config.py里增加了。
     """
-    pagination = query.order_by(Post.timestamp.desc()).paginate(
+    pagination = query.order_by(Post.post_date.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     # posts = Post.query.order_by(Post.timestamp.desc()).all()
@@ -510,10 +511,9 @@ def article_category_name(category_name):
 
 @blog.route('/delete-article/<int:id>')
 @login_required
+@permission_blogger.require(403)
 def delete_article(id):
     post = Post.query.get_or_404(id)
-    if not current_user.can(Permission.ADMINISTER):
-        abort(403)
     db.session.delete(post)
     db.session.commit()
     flash('你已成功删除了文章《%s》' % post.title)
@@ -522,7 +522,7 @@ def delete_article(id):
 
 @blog.route('/delete-comment/<int:id>')
 @login_required
-@permission_required(Permission.MODERATE_COMMENTS)
+@permission_blogger.require(403)
 def delete_comment(id):
     comment = Comment.query.get_or_404(id)
     db.session.delete(comment)

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from flask import render_template, redirect, request, url_for, flash, current_app
+from flask import render_template, redirect, request, url_for, flash, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_principal import (identity_changed, Identity,
                              AnonymousIdentity)
@@ -29,28 +29,12 @@ def login():
 
             # notify the change of role
             identity_changed.send(current_app, identity=Identity(user.id))
-            """
-            按照第 4 章介绍的“Post/ 重定向 /Get 模式”,提交登录密令的 POST 请求最后也做了重定向,不过目标 URL 有两种可能:
-            用户访问未授权的 URL 时会显示登录表单,Flask-Login 会把原地址保存在查询字符串的 next 参数中,这个参数可从 request.args 字典中读取。
-            如果查询字符串中没有 next 参数,则重定向到首页。
-            """
-            return redirect(request.args.get('next') or url_for('blog.article'))
+            return form.redirect('blog.article')
+
         flash('用户名或密码不正确 ╮(￣▽￣)╭')
     # 当请求类型是 GET 时,视图函数直接渲染模板,即显示表单。因为15行的那个条件判断后为False,根本不会执行
     # 当表单在 POST 请求中提交时, Flask-WTF 中的 validate_on_submit() 函数会验证表单数据,然后尝试登入用户
     return render_template('./auth/login.html', form=form)
-    """
-    Flask 认为模板的路径是相对于程序模板文件夹而言的。
-    为避免与 main 蓝本和后续添加的蓝本发生模板命名冲突,可以把蓝本使用的模板保存在单独的文件夹中。
-
-    我们也可将蓝本配置成使用其独立的文件夹保存模板。
-    如果配置了多个模板文件夹,render_template() 函数会首先搜索程序配置的模板文件夹,然后再搜索蓝本配置的模板文件夹。
-    """
-
-    """
-    在生产服务器上,登录路由必须使用安全的 HTTP,从而加密传送给服务器的表单数据。
-    如果没使用安全的 HTTP,登录密令在传输过程中可能会被截取,在服务器上花再多的精力用于保证密码安全都无济于事。
-    """
 
 
 # 登出用户，退出路由
@@ -59,6 +43,9 @@ def login():
 def logout():
     # 调用 Flask-Login 中的 logout_user() 函数,删除并重设用户会话
     logout_user()
+    # Remove session keys set by Flask-Principal
+    for key in ('identity.name', 'identity.auth_type'):
+        session.pop(key, None)
     # notify the change of role
     identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
     flash('你已退出。ヾ(￣▽￣)Bye~Bye~')

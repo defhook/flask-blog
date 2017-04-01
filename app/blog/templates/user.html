@@ -6,7 +6,7 @@
 {% block page_content %}
 <div class="container-fluid">
     <div class="page-header">
-        <img class="img-rounded profile-thumbnail profile-avatar" src="{{ user.avatar() }}">
+        <img class="img-rounded profile-thumbnail profile-avatar" src="{{ user.avatar }}">
         <div class="profile-header">
             <h1>{{ user.username }}</h1>
             <!-- name 和 location 字段在同一个 <p> 元素中渲染。只有至少定义了这两个字段中的一个时, <p> 元素才会创建。 -->

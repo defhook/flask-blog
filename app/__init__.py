@@ -4,7 +4,6 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
 from flask import Flask
-from flask_blogging import SQLAStorage
 from sqlalchemy import create_engine
 from .extensions import *
 
@@ -14,19 +13,35 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__, instance_relative_config=True)
 
 
-def init_mail():
+# 导入模块
+# from .wechat_channel import ws
+# from .wechat import wechat
+from .blog import blog
+from . import index
+
+
+def __init_watchdog():
     import logging
-    from logging.handlers import SMTPHandler
+    from logging.handlers import SMTPHandler, RotatingFileHandler
+
     mail_handler = SMTPHandler(
         (app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
         app.config['FLASKY_MAIL_SENDER'],
-        [app.config['FLASKY_ADMIN']],
+        [app.config['FLASKY_ADMIN_MAIL']],
         app.config['FLASKY_MAIL_SUBJECT_PREFIX'] + 'Application Error',
         credentials=(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD']),
         secure=app.config['MAIL_USE_SSL']
     )
     mail_handler.setLevel(logging.ERROR)
     app.logger.addHandler(mail_handler)
+
+    file_handler = RotatingFileHandler(
+        app.config['ROTATING_LOG_PATH'],
+        maxBytes=2*1024*1024,
+        backupCount=1
+    )
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
 
 
 def init_app():
@@ -49,26 +64,16 @@ def init_app():
     page_down.init_app(app)
     principal.init_app(app)
     login_master.init_app(app)
-    init_mail()
-
-    login_master.session_protection = 'strong'
+    __init_watchdog()
 
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
-    with app.app_context():
-        sql_storage = SQLAStorage(engine=engine, metadata=meta, db=db)
-    # meta.create_all(bind=engine)
-    blog_engine.init_app(app, sql_storage, cache)
+
+    meta.create_all(bind=engine)
     # ws.init_app(app)
 
     if not app.config['DEBUG'] and not app.config['DEV']:
         from flask_sslify import SSLify
         SSLify(app, subdomains=True)
 
-
-# 导入模块
-# from .wechat_channel import ws
-# from .wechat import wechat
-from .blog import blog
-from . import index
 
 init_app()

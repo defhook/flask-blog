@@ -1,14 +1,12 @@
-{# extends "base.html" #}
-{% extends "blogging/editor.html" %}
-{# import "bootstrap/wtf.html" as wtf #}
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
-{#
 {% block title %}{{ show_title() }} - 写新文章{% endblock %}
 
 {% block page_content %}
 <div class="container-fluid">
     <div class="write-article-body">
-        {% if current_user.can(Permission.WRITE_ARTICLES) %}
+        {% if current_user.is_authenticated %}
         <div class="form-write-article">{{ wtf.quick_form(form) }}</div>
         {% endif %}
     </div>
@@ -18,5 +16,6 @@
 {% block scripts %}
 {{ super() }}
 {{ pagedown.include_pagedown() }}
+<!--<script src="//cdn.ckeditor.com/4.6.0/standard/ckeditor.js"></script>-->
+<!--<script src="{{ url_for('blog.static', filename='ckeditor/ckeditor.js') }}"></script>-->
 {% endblock %}
-#}
