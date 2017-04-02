@@ -6,7 +6,7 @@ from flask import current_app
 from app import app, db
 
 
-class BasicsTestCase(unittest.TestCase):
+class PermissionsTestCase(unittest.TestCase):
     def setUp(self):
         self.app = app
         self.ctx = self.app.app_context()
@@ -18,5 +18,5 @@ class BasicsTestCase(unittest.TestCase):
         db.drop_all()
         self.ctx.pop()
 
-    def test_app_exists(self):
-        self.assertFalse(current_app is None)
+    def test_administrator(self):
+        pass

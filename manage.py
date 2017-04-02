@@ -17,13 +17,13 @@ migrate = Migrate(app, db)
 
 def make_shell_context():
     return dict(app=app, db=db, User=User, Role=Role,
-                Permission=permissions, Post=Post)
+                permissions=permissions, Post=Post)
 
 master.add_command('shell', Shell(make_context=make_shell_context))
 master.add_command('db', MigrateCommand)
 
 
-def create_admin(**kwargs):
+def create_admin(password, **kwargs):
     admin_user = User.query.filter_by(username=app.config['FLASKY_ADMIN_NAME']).first()
     if admin_user is not None:
         return
@@ -43,12 +43,14 @@ def create_admin(**kwargs):
         db.session.add(role)
 
     # 创建admin用户
-    admin_user = User(username=app.config['FLASKY_ADMIN_NAME'],
-                      email=app.config['FLASKY_ADMIN_MAIL'],
+    admin_user = User(app.config['FLASKY_ADMIN_MAIL'],
+                      password,
+                      username=app.config['FLASKY_ADMIN_NAME'],
+                      active=True,
                       **kwargs)
     db.session.add(admin_user)
 
-    admin = Role.query.filter_by(name=r.name).first()
+    admin = Role.query.filter_by(name=role_admin.value).first()
     admin.users.append(admin_user)
     db.session.add(admin)
     db.session.commit()
@@ -63,9 +65,8 @@ def deploy(pwd):
     from flask_migrate import upgrade
 
     upgrade()
-    create_admin(nickname=app.config['FLASKY_ADMIN_NICK'],
-                 about_me=app.config['FLASKY_ADMIN_ABOUT'],
-                 password=pwd)
+    create_admin(pwd, nickname=app.config['FLASKY_ADMIN_NICK'],
+                 about_me=app.config['FLASKY_ADMIN_ABOUT'])
 
 
 @master.command

@@ -99,7 +99,7 @@ def user(username):
         abort(404)
         # 用户发布的博客文章列表通过 User.posts 关系获取,User.posts 返回的是查询对象,
         # 因此可在其上调用过滤器,例如 order_by()。
-    posts = user.posts.order_by(Post.timestamp.desc()).all()
+    posts = user.posts.order_by(Post.post_date.desc()).all()
     return render_template('user.html', user=user, posts=posts)
 
 
@@ -135,8 +135,8 @@ def edit_profile_admin(id):
         user.username = form.username.data
         # user.confirmed = form.confirmed.data
         user.role = Role.query.get(form.role.data)
-        user.name = form.name.data
-        user.location = form.location.data
+        user.username = form.name.data
+        # user.location = form.location.data
         user.about_me = form.about_me.data
         db.session.add(user)
         db.session.commit()
@@ -145,17 +145,11 @@ def edit_profile_admin(id):
     form.email.data = user.email
     form.username.data = user.username
     # form.confirmed.data = user.confirmed
-    form.role.data = user.role_id
-    form.name.data = user.name
-    form.location.data = user.location
+    form.role.data = user.roles[0].id
+    form.name.data = user.username
+    # form.location.data = user.location
     form.about_me.data = user.about_me
     return render_template('edit_profile.html', form=form, user=user)
-    """
-    我们还需要再探讨一下用于选择用户角色的 SelectField。
-    设定这个字段的初始值时, role_id 被赋值给了 field.role.data,这么做的原因在于 choices 属性中设置的元组列表使用数字标识符表示各选项。
-    表单提交后,id 从字段的 data 属性中提取,并且查询时会使用提取出来的 id 值加载角色对象。
-    表单中声明 SelectField 时使用 coerce=int 参数, 其作用是保证这个字段的 data 属性值是整数。
-    """
 
 
 # 博客文章的 URL 使用插入数据库时分配的唯一 id 字段构建
@@ -260,81 +254,6 @@ def edit(id):
     return render_template('edit_post.html', form=form)
 
 
-# 用户在其他用户的资料页中点击“Follow”(关注)按钮后,执行的是/follow/<username>路由。
-@blog.route('/follow/<username>')
-@login_required
-@permission_admin.require(403)
-def follow(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('用户不存在')
-        return redirect(url_for('.index'))
-    if current_user.is_following(user):
-        flash('你已关注了此用户')
-        return redirect(url_for('.user', username=username))
-    current_user.follow(user)
-    flash('你关注了 %s' % username)
-    return redirect(url_for('.user', username=username))
-
-
-@blog.route('/unfollow/<username>')
-@login_required
-@permission_admin.require(403)
-def unfollow(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('用户不存在')
-        return redirect(url_for('.index'))
-    if not current_user.is_following(user):
-        flash('你已取消关注了此用户')
-        return redirect(url_for('.user', username=username))
-    current_user.unfollow(user)
-    flash('你已不再关注 %s' % username)
-    return redirect(url_for('.user', username=username))
-
-
-# 用户在其他用户的资料页中点击关注者数量后,将调用 /followers/<username> 路由。
-@blog.route('/followers/<username>')
-def followers(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('用户不存在')
-        return redirect(url_for('.index'))
-    # 使用第 11 章中介绍的技术分页显示该用户的 followers 关系。
-    page = request.args.get('page', 1, type=int)
-    pagination = user.followers.paginate(
-        page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
-        error_out=False)
-    # 由于查询关注者返回的是 Follow 实例列表,为了渲染方便,将其转换成一个新列表,列表中的各元素都包含 user 和 timestamp 字段。
-    follows = [{'user': item.follower, 'timestamp': item.timestamp}
-               for item in pagination.items]
-    # 渲染关注者列表的模板可以写的通用一些,以便能用来渲染关注的用户列表和被关注的用户列表。模板接收的参数包括用户对象、分页链接使用的端点、分页对象和查询结果列表。
-    return render_template('followers.html', user=user, title='他们关注了',
-                           endpoint='.followers', pagination=pagination, follows=follows)
-
-
-@blog.route('/followed-by/<username>')
-def followed_by(username):
-    user = User.query.filter_by(username=username).first()
-    if user is None:
-        flash('Invalid user.')
-        return redirect(url_for('.index'))
-    page = request.args.get('page', 1, type=int)
-    pagination = user.followed.paginate(
-        page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
-        error_out=False)
-    follows = [{'user': item.followed, 'timestamp': item.timestamp}
-               for item in pagination.items]
-    return render_template('followers.html', user=user, title='关注了他们',
-                           endpoint='.followed_by', pagination=pagination, follows=follows)
-
-
-"""
-show_followedcookie 在两个新路由中设定
-指向这两个路由的链接添加在首页模板中。点击这两个链接后会为 show_followed cookie 设定适当的值,然后重定向到首页。
-"""
-
-
 @blog.route('/all')
 @login_required
 def show_all():
@@ -400,9 +319,8 @@ def moderate_disable(id):
 @blog.route('/article_new', methods=['GET', 'POST'])
 @permission_blogger.require(403)
 def article_new():
-    return redirect(url_for('blogging.editor'))
     form = PostForm()
-    if current_user.can(Permission.WRITE_ARTICLES) and form.validate_on_submit():
+    if form.validate_on_submit():
         """
         新文章对象的 author 属性值为表达式 current_user._get_current_object()。
         变量 current_user 由 Flask-Login 提供,和所有上下文变量一样,也是通过线程内的代理对象实现。
@@ -475,7 +393,7 @@ def article():
     pagination = query.order_by(Post.post_date.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
-    # posts = Post.query.order_by(Post.timestamp.desc()).all()
+    # posts = Post.query.order_by(Post.post_date.desc()).all()
     posts = pagination.items
     category = sort_category()
     for post in posts:
@@ -498,7 +416,7 @@ def article_category_name(category_name):
     if not Category.query.filter_by(category_name=category_name).all():
         abort(404)
     _category = Category.query.filter_by(category_name=category_name).first()
-    pagination = Post.query.filter_by(category_id=_category.id).order_by(Post.timestamp.desc()).paginate(
+    pagination = Post.query.filter_by(category_id=_category.id).order_by(Post.post_date.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     posts = pagination.items

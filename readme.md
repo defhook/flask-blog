@@ -8,5 +8,9 @@
 微信 [广科小猫](https://github.com/paicha/gxgk-wechat-server)
 [doraemonext](https://github.com/doraemonext/wechat-python-sdk)  
 
+
+## 参考资料
+https://www3.ntu.edu.sg/home/ehchua/programming/webprogramming/Python3_Flask.html
+
 ## 许可协议
 [MIT](LICENSE)

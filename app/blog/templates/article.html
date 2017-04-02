@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block page_content %}
-    {% if permissions.permission_blogger.allows(current_user) %}
+    {% if current_user.is_blogger %}
     <div class="write-article-body">
     <a class="btn btn-primary" href="{{ url_for('.article_new') }}">写新文章</a>
     {% endif %}

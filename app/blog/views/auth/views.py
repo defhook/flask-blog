@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals, absolute_import
-from flask import render_template, redirect, request, url_for, flash, current_app, session
+from flask import render_template, redirect, request, url_for, flash, current_app, session, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_principal import (identity_changed, Identity,
                              AnonymousIdentity)
@@ -11,6 +11,7 @@ from .forms import LoginForm, RegistrationForm, ChangePasswordForm, PasswordRese
 from app import db
 from app.email import send_email
 from app.blog import blog
+from app.permissions import permission_deny
 
 
 # 登入用户，登录路由
@@ -21,6 +22,11 @@ def login():
         # 反正可以运行到下面这句话之前，而且form.email.data是存在的。用print试过了。
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.verify_password(form.password.data):
+            # 在黑名单内的用户禁止登陆
+            if permission_deny.can():
+                flash('你已经被限制登录 ╮(￣▽￣)╭')
+                abort(403)
+
             # “记住我”布尔值如果值为 False,那么关闭浏览器后用户会话就过期了,所以下次用户访问时要重新登录。
             # 如果值为 True,那么会在用户浏览器中写入一个长期有效的 cookie,使用这个 cookie 可以复现用户会话
             login_user(user, form.remember_me.data)
@@ -55,7 +61,7 @@ def logout():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(email=form.email.data, username=form.username.data, password=form.password.data)
+        user = User(form.email.data, form.password.data, username=form.username.data)
         db.session.add(user)
         db.session.commit()
         """

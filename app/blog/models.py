@@ -39,16 +39,17 @@ class Role(db.Model):
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(64), unique=True, index=True)
+    email = db.Column(db.String(64), unique=True, index=True, nullable=False)
     username = db.Column(db.String(64), unique=True, index=True)
     nickname = db.Column(db.String(64))
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(128), nullable=False)
     # db.String 和 db.Text 的区别在于后者不需要指定最大长度
     about_me = db.Column(db.String(100))
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     posts = db.relationship('Post', backref='author', lazy='dynamic',
                             cascade='all, delete-orphan')
+    active = db.Column(db.Boolean, default=False, nullable=False)
     roles = db.relationship(
         'Role',
         secondary=users_roles,
@@ -115,9 +116,11 @@ class User(UserMixin, db.Model):
                 db.session.rollback()
                 # 这个异常的处理方式是,在继续操作之前回滚会话。在循环中生成重复内容时不会把用户写入数据库,因此生成的虚拟用户总数可能会比预期少
 
-    def __init__(self, *args, **kwargs):
-        # User 类的构造函数首先调用基类的构造函数,如果创建基类对象后还没定义角色,则根据电子邮件地址决定将其设为管理员还是默认角色。
-        super(User, self).__init__(*args, **kwargs)
+    def __init__(self, email, pwd, active=False, **kwargs):
+        super().__init__(**kwargs)
+        self.email = email
+        self.password = pwd
+        self.active = active
 
     """
     Python内置的@property装饰器就是负责把一个方法变成属性调用的.
@@ -134,6 +137,8 @@ class User(UserMixin, db.Model):
 
     @password.setter
     def password(self, password):
+        if password is None:
+            raise TypeError('password is not nullable')
         self.password_hash = generate_password_hash(password)
 
     # 如果这个方法返回 True,就表明密码是正确的。
@@ -177,11 +182,11 @@ class User(UserMixin, db.Model):
     # 检查管理员权限的功能经常用到,因此使用单独的方法 is_administrator() 实现。
     @cached_property
     def is_administrator(self):
-        return permission_admin.allows(self)
+        return permission_admin.can()
 
     @cached_property
     def is_moderator(self):
-        return permission_moderator.allows(self)
+        return permission_moderator.can()
 
     @property
     def is_authenticated(self):
@@ -189,14 +194,19 @@ class User(UserMixin, db.Model):
 
     @property
     def is_blogger(self):
-        return permission_blogger.allows(self)
+        return permission_blogger.can()
 
     # last_seen 字段创建时的初始值也是当前时间,但用户每次访问网站后,这个值都会被刷新。所以添加此处的方法完成这个操作
     def ping(self):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
 
-    # 每次收到用户的请求时都要调用 ping() 方法。由于 auth 蓝本中的 before_app_request 处理程序会在每次请求前运行,所以能很轻松地实现这个需求
+    def get_id(self):
+        return self.email
+
+    @property
+    def is_active(self):
+        return self.active
 
     @cached_property
     def avatar(self):
@@ -209,27 +219,6 @@ class User(UserMixin, db.Model):
         gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(email.lower().encode('utf-8')).hexdigest() + "?"
         gravatar_url += urllib.parse.urlencode({'d':default, 's':str(size)})
         return gravatar_url
-
-    """
-    follow() 方法手动把 Follow 实例插入关联表,从而把关注者和被关注者联接起来,并让程序有机会设定自定义字段的值。
-    联接在一起的两个用户被手动传入 Follow 类的构造器,创建一个 Follow 新实例,然后像往常一样,把这个实例对象添加到数据库会话中。
-    注意, 这里无需手动设定 timestamp 字段,因为定义字段时指定了默认值,即当前日期和时间。
-    """
-
-    def follow(self, user):
-        pass
-
-    # unfollow() 方法使用 followed 关系找到联接用户和被关注用户的 Follow 实例。
-    # 若要销毁这 两个用户之间的联接,只需删除这个 Follow 对象即可。
-    def unfollow(self, user):
-        pass
-
-    def is_following(self, user):
-        return self.followed.filter_by(followed_id=user.id).first() is not None
-
-    # is_following() 方法和 is_followed_ by() 方法分别在左右两边的一对多关系中搜索指定用户,如果找到了就返回 True。
-    def is_followed_by(self, user):
-        return self.followers.filter_by(follower_id=user.id).first() is not None
 
     def __repr__(self):
         return '<User %r>' % self.username
@@ -296,7 +285,7 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
-    view_times = db.Column(db.Integer)
+    view_times = db.Column(db.Integer, default=1)
 
     @property
     def category_name(self):
@@ -426,4 +415,4 @@ class Category(db.Model):
 class HomePage(db.Model):
     __tablename__ = 'homepages'
     id = db.Column(db.Integer, primary_key=True)
-    view_times = db.Column(db.Integer)
+    view_times = db.Column(db.Integer, default=1)

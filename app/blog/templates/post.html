@@ -15,7 +15,7 @@
         <div class="col-xs-12 col-md-9">
             {% include '_posts.html' %}
             <h3 id="comments">评论</h3>
-            {% if current_user.can(Permission.COMMENT) %}
+            {% if current_user.is_authenticated %}
             <div class="comment-form">{{ wtf.quick_form(form) }}</div>
             {% else %}
             <a href="{{ url_for('auth.login') }}" class="btn btn-primary">登陆后评论</a>

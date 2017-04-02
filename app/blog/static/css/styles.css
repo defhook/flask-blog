@@ -182,9 +182,6 @@ div.flask-pagedown-preview h3 {
 .post-body h3 {
   font-size: 120%;
 }
-.table.followers tr {
-  border-bottom: 1px solid #e0e0e0;
-}
 
 /* add */
 blockquote {
@@ -207,16 +204,6 @@ pre {
 .index-article-avatar {
   width: 30px;
   height: 30px;
-}
-
-/* followers.html */
-.followers-avatar {
-  width: 23px;
-  height: 23px;
-}
-.followed-by-avatar {
-  width: 23px;
-  height: 23px;
 }
 
 /* _comments.html */
