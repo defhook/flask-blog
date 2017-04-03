@@ -61,8 +61,9 @@ class PostForm(FlaskForm):
     title = TextAreaField("编辑文章_标题", validators=[DataRequired()])
     intro = TextAreaField("编辑文章_简介")
     body = TextAreaField("编辑文章_正文", validators=[DataRequired()])
+    body_html = TextAreaField(u"预览", validators=[DataRequired()])
     category_name = StringField("分类", validators=[Length(0, 64)])
-    submit = SubmitField('提交')
+    submit = SubmitField('发表文章')
 
 
 class CommentForm(FlaskForm):
