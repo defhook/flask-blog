@@ -22,22 +22,21 @@ def login():
         # 反正可以运行到下面这句话之前，而且form.email.data是存在的。用print试过了。
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.verify_password(form.password.data):
+            # notify the change of role
+            identity_changed.send(current_app._get_current_object(), identity=Identity(user.id))
+
             # 在黑名单内的用户禁止登陆
-            if permission_deny.can():
+            if not permission_deny.can():
+                identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
                 flash('你已经被限制登录 ╮(￣▽￣)╭')
-                abort(403)
+                return form.redirect('blog.index')
 
             # “记住我”布尔值如果值为 False,那么关闭浏览器后用户会话就过期了,所以下次用户访问时要重新登录。
             # 如果值为 True,那么会在用户浏览器中写入一个长期有效的 cookie,使用这个 cookie 可以复现用户会话
             login_user(user, form.remember_me.data)
-
-            # notify the change of role
-            identity_changed.send(current_app, identity=Identity(user.id))
             return form.redirect('blog.article')
 
         flash('用户名或密码不正确 ╮(￣▽￣)╭')
-    # 当请求类型是 GET 时,视图函数直接渲染模板,即显示表单。因为15行的那个条件判断后为False,根本不会执行
-    # 当表单在 POST 请求中提交时, Flask-WTF 中的 validate_on_submit() 函数会验证表单数据,然后尝试登入用户
     return render_template('./auth/login.html', form=form)
 
 
