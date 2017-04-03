@@ -202,7 +202,7 @@ class User(UserMixin, db.Model):
         db.session.add(self)
 
     def get_id(self):
-        return self.email
+        return self.id
 
     @property
     def is_active(self):
