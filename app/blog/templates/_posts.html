@@ -24,11 +24,17 @@
                 <hr />
                     {% if post.body_html %}
                         <!--
-                        渲染 HTML 格式内容时使用 | safe 后缀，其目的是告诉 Jinja2 不要转义 HTML 元素。出于安全考虑,默认情况下 Jinja2 会转义所有模板变量。Markdown 转换成的 HTML 在服务器上生成,因此可以放心渲染。
+                        渲染 HTML 格式内容时使用 | safe 后缀，其目的是告诉 Jinja2 不要转义 HTML 元素。
+                        出于安全考虑,默认情况下 Jinja2 会转义所有模板变量。
+                        Markdown 转换成的 HTML 在服务器上生成,因此可以放心渲染。
                         -->
                         {{ post.body_html | safe }}
                     {% else %}
-                        {{ post.body }}
+                        <div id="editormd-post-body">
+                            <textarea style="display:none;">
+                                {{- post.body -}}
+                            </textarea>
+                        </div>
                     {% endif %}
                 {% endif %}
             </div>

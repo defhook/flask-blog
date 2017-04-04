@@ -159,7 +159,6 @@ def post(id):
     post = Post.query.get_or_404(id)
     post.body_show = True
     # 这个视图函数实例化了一个评论表单,并将其转入 post.html 模板,以便渲染。
-    # input_hint = '*斜体*, **粗体**, `代码`, * a, , '
     input_hint = '''### h3标题（注意：换行是先敲两个空格再敲回车！）  
 ***  
 + 三个星号是分隔线。现在这个加号后面一个空格是列表。  
@@ -329,14 +328,19 @@ def article_new():
         """
         post = Post(title=form.title.data, intro=form.intro.data, body=form.body.data,
                     author=current_user._get_current_object())
-        db.session.add(post)
-        db.session.commit()
+
         if form.category_name.data:
             category = Category(category_name=form.category_name.data)
             db.session.add(category)
             db.session.commit()
             post.category_id = category.id
             # db.session.add(post)
+        try:
+            db.session.add(post)
+        except Exception:
+            db.session.rollback()
+        else:
+            db.session.commit()
         return redirect(url_for('.article'))
     return render_template('article_new.html', form=form)
     # 这样修改之后,首页中的文章列表只会显示有限数量的文章。若想查看第 2 页中的文章,
