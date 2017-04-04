@@ -100,7 +100,7 @@
     {{ super() }}
     <script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
     {{ moment.include_moment() }}
-    {{ moment.lang('zh-cn') }}
+    {{- moment.lang('zh-cn') -}}
     {{ pagedown.include_pagedown() }}
 {% endblock %}
 
