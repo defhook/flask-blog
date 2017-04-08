@@ -250,7 +250,7 @@ def edit(id):
     if post.category_id:
         category = Category.query.filter_by(id=post.category.id).first()
         form.category_name.data = category.category_name
-    return render_template('edit_post.html', form=form)
+    return render_template('edit_post.html', form=form, post=post)
 
 
 @blog.route('/all')

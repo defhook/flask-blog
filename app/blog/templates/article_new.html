@@ -14,38 +14,38 @@
 {{- super() }}
 <div class="container-fluid">
     <div class="write-article-body">
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_blogger %}
         {#<div class="form-write-article">{{ wtf.quick_form(form) }}</div>#}
         <div class="col-md-11" style="margin-bottom: 20px;margin-left: 100px;" id="article_new">
-        <form action="/blog/article_new" method="post" class="form-group">
-            <div style="display: none">
-                {{ form.csrf_token() }}
-            </div>
-            <div class="form-group">
-                <label for="title">文章标题</label>
-                {{ form.title(id='title', class="form-control") }}
-            </div>
-            <div class="form-group">
-                 {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
-            </div>
-            <div class="form-group" >
-                <label for="editormd">文章内容</label>
-                <div id="editormd">
-                    {{ form.body(id='body') }}
+            <form action="/blog/article_new" method="post" class="form-group">
+                <div style="display: none">
+                    {{ form.csrf_token() }}
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="category_name">文章分类</label>
-                {{ form.category_name(id='category_name', class="form-control") }}
-            </div>
-            <div class="form-group" style="display: inline">
-                {{ form.submit(id='abc', class='btn btn-default') }}
-            </div>
-            <div style="display: none;">
-                {{ form.body_html(id='body_html') }}
-            </div>
-        </form>
-    </div>
+                <div class="form-group">
+                    <label for="title">文章标题</label>
+                    {{ form.title(id='title', class="form-control") }}
+                </div>
+                <div class="form-group">
+                     {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
+                </div>
+                <div class="form-group" >
+                    <label for="editormd-view">文章内容</label>
+                    <div id="editormd-view">
+                        {{ form.body(id='body') }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="category_name">文章分类</label>
+                    {{ form.category_name(id='category_name', class="form-control") }}
+                </div>
+                <div class="form-group" style="display: inline">
+                    {{ form.submit(id='abc', class='btn btn-default') }}
+                </div>
+                <div style="display: none;">
+                    {{ form.body_html(id='body_html') }}
+                </div>
+            </form>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -68,7 +68,7 @@
 
     <script type="text/javascript">
     $(document).ready( function() {
-        var editor = editormd("editormd", {
+        var editor = editormd("editormd-view", {
             path : "{{url_for('blog.static', filename='editor.md/lib/')}}" ,// Autoload modules mode, dependents libs path
             pluginPath: "{{url_for('blog.static', filename='editor.md/plugins/')}}",
             height : 640,
