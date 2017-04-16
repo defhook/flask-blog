@@ -234,7 +234,7 @@ def edit(id):
         if form.category_name.data:
             category_name_exists = Category.query.filter_by(category_name=form.category_name.data).first()
             if not category_name_exists:
-                category = Category(category_name=form.category_name.data)
+                category = Category(form.category_name.data)
                 db.session.add(category)
                 db.session.commit()
                 post.category_id = category.id
@@ -330,7 +330,7 @@ def article_new():
                     author=current_user._get_current_object())
 
         if form.category_name.data:
-            category = Category(category_name=form.category_name.data)
+            category = Category(form.category_name.data)
             db.session.add(category)
             db.session.commit()
             post.category_id = category.id
@@ -342,6 +342,7 @@ def article_new():
         else:
             db.session.commit()
         return redirect(url_for('.article'))
+    form.category_name.data = Category.query.first_or_404()
     return render_template('article_new.html', form=form)
     # 这样修改之后,首页中的文章列表只会显示有限数量的文章。若想查看第 2 页中的文章,
     # 要在浏览器地址栏中的 URL 后加上查询字符串 ?page=2。
@@ -349,51 +350,8 @@ def article_new():
 
 @blog.route('/article', methods=['GET', 'POST'])
 def article():
-    # form = PostForm()
-    # if current_user.can(Permission.WRITE_ARTICLES) and form.validate_on_submit():
-    #     """
-    #     新文章对象的 author 属性值为表达式 current_user._get_current_object()。
-    #     变量 current_user 由 Flask-Login 提供,和所有上下文变量一样,也是通过线程内的代理对象实现。
-    #     这个对象的表现类似用户对象,但实际上却是一个轻度包装,包含真正的用户对象。 
-    #     数据库需要真正的用户对象,因此要调用 _get_current_object() 方法。
-    #     """
-    #     post = Post(title=form.title.data, intro=form.intro.data, body=form.body.data, 
-    #         author=current_user._get_current_object())
-    #     db.session.add(post)
-    #     if form.category_name.data:
-    #         category = Category(category_name=form.category_name.data)
-    #         db.session.add(category)
-    #         db.session.commit()
-    #         post.category_id = category.id
-    #         db.session.add(post)
-    #     return redirect(url_for('.article'))
-    # 渲染的页数从请求的查询字符串(request.args)中获取,如果没有明确指定,则默认渲染第一页。
-    # 参数 type=int 保证参数无法转换成整数时,返回默认值
     page = request.args.get('page', 1, type=int)
-    # show_followed = False
-    # if current_user.is_authenticated:
-    #     """
-    #     决定显示所有博客文章还是只显示所关注用户文章的选项存储在 cookie 的 show_followed 字段中,
-    # 如果其值为非空字符串,则表示只显示所关注用户的文章。
-    #     cookie 以 request. cookies 字典的形式存储在请求对象中.
-    #     这个 cookie 的值会转换成布尔值,根据得到的值设定本地变量 query 的值。query
-    # 的值决定最终获取所有博客文章的查询,或是获取过滤后的博客文章查询。
-    #     """
-    #     show_followed = bool(request.cookies.get('show_followed', ''))
-    # if show_followed:
-    #     query = current_user.followed_posts
-    # else:
-    #     query = Post.query
     query = Post.query
-    """
-    为了显示某页中的记录,要把 all() 换成 Flask-SQLAlchemy 提供的 paginate() 方法。
-    页数是 paginate() 方法的第一个参数,也是唯一必需的参数。
-    可选参数 per_page 用来指定每页显示的记录数量;如果没有指定,则默认显示 20 个记录。
-    另一个可选参数为 error_ out,当其设为 True 时(默认值),如果请求的页数超出了范围,则会返回 404 错误;
-    如果 设为 False,页数超出范围时会返回一个空列表。
-    为了能够很便利地配置每页显示的记录数量,参数 per_page 的值从程序的环境变量 FLASKY_POSTS_PER_PAGE 中读取。
-    所以去config.py里增加了。
-    """
     pagination = query.order_by(Post.post_date.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
@@ -404,8 +362,6 @@ def article():
         post.body_show = False
     return render_template('article.html', posts=posts, categories=category, show_followed=show_followed,
                            pagination=pagination)
-    # 这样修改之后,首页中的文章列表只会显示有限数量的文章。若想查看第 2 页中的文章,
-    # 要在浏览器地址栏中的 URL 后加上查询字符串 ?page=2。
 
 
 @blog.route('/article/<category_name>', methods=['GET', 'POST'])

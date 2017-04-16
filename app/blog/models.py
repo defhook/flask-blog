@@ -18,9 +18,13 @@ import hashlib
 import urllib
 
 users_roles = db.Table('users_roles',
-             # meta,
-             db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
-             db.Column('role_id', db.Integer, db.ForeignKey('roles.id')))
+                       # meta,
+                       db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+                       db.Column('role_id', db.Integer, db.ForeignKey('roles.id')))
+
+posts_tags = db.Table('posts_tags',
+                      db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')),
+                      db.Column('post_id', db.Integer, db.ForeignKey('posts.id')))
 
 
 class Role(db.Model):
@@ -89,32 +93,6 @@ class User(UserMixin, db.Model):
     #                             cascade='all, delete-orphan')
     # 为了完成对数据库的修改,User 和 Post 模型还要建立与 comments 表的一对多关系
     comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade='all, delete-orphan')
-
-    # 添加到 User 模型中的类方法,用来生成虚拟数据
-    @staticmethod
-    def generate_fake(count=100):
-        from sqlalchemy.exc import IntegrityError
-        from random import seed
-        import forgery_py
-
-        seed()
-        for i in range(count):
-            # 这些虚拟对象的属性由 ForgeryPy 的随机信息生成器生成,其中的名字、电子邮件地址、句子等属性看起来就像真的一样
-            u = User(email=forgery_py.internet.email_address(),
-                     username=forgery_py.internet.user_name(True),
-                     password=forgery_py.lorem_ipsum.word(),
-                     # confirmed=True,
-                     name=forgery_py.name.full_name(),
-                     location=forgery_py.address.city(),
-                     about_me=forgery_py.lorem_ipsum.sentence(),
-                     member_since=forgery_py.date.date(True))
-            db.session.add(u)
-            # ForgeryPy 随机生成这些信息,因此有重复的风险
-            try:
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                # 这个异常的处理方式是,在继续操作之前回滚会话。在循环中生成重复内容时不会把用户写入数据库,因此生成的虚拟用户总数可能会比预期少
 
     def __init__(self, email, pwd, active=False, **kwargs):
         super().__init__(**kwargs)
@@ -287,32 +265,13 @@ class Post(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     view_times = db.Column(db.Integer, default=1)
 
+    tags = db.relationship('Tag',
+                           secondary=posts_tags,
+                           backref=db.backref('posts', lazy='dynamic'))
+
     @property
     def category_name(self):
         return Category.query.filter_by(id=self.category_id).first().category_name
-
-    # 添加到 Post 模型中的类方法,用来生成虚拟数据
-    @staticmethod
-    def generate_fake(count=100):
-        from random import seed, randint
-        import forgery_py
-
-        seed()
-        user_count = User.query.count()
-        for i in range(count):
-            """
-            随机生成文章时要为每篇文章随机指定一个用户。
-            为此,我们使用 offset() 查询过滤器。这个过滤器会跳过参数中指定的记录数量。
-            通过设定一个随机的偏移值,再调用 first() 方法,就能每次都获得一个不同的随机用户。
-            """
-            u = User.query.offset(randint(0, user_count - 1)).first()
-            p = Post(title=forgery_py.lorem_ipsum.sentences(randint(1, 3)),
-                     intro=forgery_py.lorem_ipsum.sentences(randint(1, 3)),
-                     body=forgery_py.lorem_ipsum.sentences(randint(1, 3)),
-                     timestamp=forgery_py.date.date(True),
-                     author=u)
-            db.session.add(p)
-            db.session.commit()
 
     @staticmethod
     # on_changed_body 函数把 body 字段中的文本渲染成 HTML 格式,结果保存在 body_html 中,
@@ -408,11 +367,30 @@ db.event.listen(Comment.body, 'set', Comment.on_changed_body)
 class Category(db.Model):
     __tablename__ = 'categories'
     id = db.Column(db.Integer, primary_key=True)
-    category_name = db.Column(db.String(64))
+    category_name = db.Column(db.String(64), unique=True)
     posts = db.relationship('Post', backref='category', lazy='dynamic')
+
+    def __init__(self, name):
+        self.category_name = name
 
 
 class HomePage(db.Model):
     __tablename__ = 'homepages'
     id = db.Column(db.Integer, primary_key=True)
     view_times = db.Column(db.Integer, default=1)
+
+
+class Tag(db.Model):
+    __tablename__ = 'tags'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True)
+
+    def __init__(self, name):
+        self.name = name.lower()
+
+    @classmethod
+    def get_tag(cls, name):
+        name = name.lower()
+        tag = db.session.query(Tag).filter_by(name=name).first()
+        return tag

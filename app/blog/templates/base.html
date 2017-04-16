@@ -1,7 +1,7 @@
 {% extends "bootstrap/base.html" %}
 
 {% macro show_title() -%}
-    OAOA的小站
+OAOA的小站
 {%- endmacro %}
 
 {% block title %}{{ show_title() }}{% endblock %}
@@ -13,7 +13,7 @@
 
 {% block metas %}
 {{ super() }}
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 {% endblock %}
 
 {% block styles %}
@@ -52,7 +52,7 @@
             </div>
             <ul class="nav navbar-nav navbar-right">
                 <!-- 为了管理评论我们要在导航条中添加一个链接具有权限的用户才能看到。这个链接在base.html 模板中使用条件语句添加 -->
-                {% if current_user.is_authenticated  %}
+                {% if current_user.is_authenticated %}
                 <li><a href="{{ url_for('blog.moderate') }}">MODERATE COMMENTS</a></li>
                 {% endif %}
                 <!-- 
@@ -76,31 +76,26 @@
                 <li><a href="{{ url_for('blog.login') }}">LOG IN / REGISTER</a></li>
                 {% endif %}
             </ul>
-        </div> 
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block content %}
-{# <div class="container-fluid"> #}
-{# <div class="row"> #}
-    {% for message in get_flashed_messages() %}
-    <div class="alert alert-warning">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        {{ message }}
-    </div>
-    {% endfor %}
-
-    {% block page_content %}{% endblock %}
-{# </div> #}
-{# </div> #}
+{% for message in get_flashed_messages() %}
+<div class="alert alert-warning">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    {{ message }}
+</div>
+{% endfor %}
+{% block page_content %}{% endblock %}
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
-    <script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
-    {{ moment.include_moment() }}
-    {{- moment.lang('zh-cn') -}}
-    {{ pagedown.include_pagedown() }}
+{{ super() }}
+<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
+{{ moment.include_moment() }}
+{{- moment.lang('zh-cn') -}}
+{{ pagedown.include_pagedown() }}
 {% endblock %}
 

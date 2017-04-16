@@ -72,8 +72,8 @@ def init_app():
     # ws.init_app(app)
 
     if not app.config['DEBUG'] and not app.config['DEV']:
-        from flask_sslify import SSLify
-        SSLify(app, subdomains=True)
+        from werkzeug.contrib.fixers import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app)
 
 
 init_app()

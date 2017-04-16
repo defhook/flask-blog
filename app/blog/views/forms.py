@@ -8,7 +8,7 @@ from wtforms.validators import DataRequired, Length, Email
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
 # from app.blog.models import Role, User
-from ..models import Role, User
+from ..models import Role, User, Tag
 
 
 class NameForm(FlaskForm):
@@ -30,7 +30,7 @@ class EditProfileAdminForm(FlaskForm):
     # confirmed = BooleanField('Confirmed')
     # WTForms 对 HTML 表单控件 <select> 进行 SelectField 包装,从而实现下拉列表
     role = SelectField('角色', coerce=int)
-    name = StringField('真实姓名', validators=[Length(0,64)])
+    name = StringField('真实姓名', validators=[Length(0, 64)])
     location = StringField('地点', validators=[Length(0, 64)])
     about_me = TextAreaField('关于我')
     submit = SubmitField('提交')
@@ -61,13 +61,18 @@ class PostForm(FlaskForm):
     title = TextAreaField("编辑文章_标题", validators=[DataRequired()])
     intro = TextAreaField("编辑文章_简介")
     body = TextAreaField("编辑文章_正文", validators=[DataRequired()])
-    body_html = TextAreaField(u"预览", validators=[DataRequired()])
-    category_name = StringField("分类", validators=[Length(0, 64)])
+    body_html = TextAreaField("预览", validators=[DataRequired()])
+    category_name = SelectField('分类', coerce=int)
+    tags = TextAreaField("标签", validators=[DataRequired()])
     submit = SubmitField('发表文章')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.category_name.choices = [(tag.id, tag.name) for tag in Tag.query.order_by(Tag.name).all()]
 
 
 class CommentForm(FlaskForm):
     body = PageDownField(
-        '评论支持部分 Markdown 语法( <a href="http://wowubuntu.com/markdown/basic.html" target="_blank">Markdown 语法快速入门</a> )',
+        '评论支持部分 Markdown 语法( <a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown 语法快速入门</a> )',
         validators=[DataRequired()])
     submit = SubmitField('提交')

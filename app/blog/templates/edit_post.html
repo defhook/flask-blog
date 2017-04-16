@@ -9,9 +9,10 @@
     #flask-pagedown-body {
         height: 260px;
     }
+
 </style>
 <link rel="stylesheet" type="text/css"
-          href="{{ url_for('blog.static', filename='editor.md/css/editormd.min.css') }}">
+      href="{{ url_for('blog.static', filename='editor.md/css/editormd.min.css') }}">
 <link rel="stylesheet" type="text/css"
       href="{{ url_for('blog.static', filename='editor.md/css/editormd.preview.min.css') }}">
 {% endblock -%}
@@ -23,9 +24,11 @@
     </div>
     <div class="write-article-body">
         {% if current_user.is_blogger %}
-        {#<div class="form-write-article">{{ wtf.quick_form(form) }}</div>#}
+        {#
+        <div class="form-write-article">{{ wtf.quick_form(form) }}</div>
+        #}
         <div class="col-md-11" style="margin-bottom: 20px;margin-left: 100px;" id="article_new">
-            <form action="/blog/edit/{{post.id}}" method="post" class="form-group">
+            <form action="{{url_for('blog.edit', id=post.id)}}" method="post" class="form-group">
                 <div style="display: none">
                     {{ form.csrf_token() }}
                 </div>
@@ -34,9 +37,9 @@
                     {{ form.title(id='title', class="form-control") }}
                 </div>
                 <div class="form-group">
-                     {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
+                    {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
                 </div>
-                <div class="form-group" >
+                <div class="form-group">
                     <label for="editormd-view">文章内容</label>
                     <div id="editormd-view">
                         {{ form.body(id='body') }}
@@ -62,8 +65,8 @@
 {% block scripts %}
 {{ super() }}
 {{- pagedown.include_pagedown() -}}
-    <script src="{{ url_for('blog.static', filename='editor.md/editormd.min.js') }}" type="text/javascript"></script>
-    <script type="text/javascript">
+<script src="{{ url_for('blog.static', filename='editor.md/editormd.min.js') }}" type="text/javascript"></script>
+<script type="text/javascript">
         $(document).ready( function() {
             var editor = editormd("editormd-view", {
                 path : "{{url_for('blog.static', filename='editor.md/lib/')}}" ,// Autoload modules mode, dependents libs path
@@ -92,5 +95,6 @@
             });
 
         });
-    </script>
+
+</script>
 {% endblock %}
