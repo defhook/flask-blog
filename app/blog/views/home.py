@@ -319,22 +319,10 @@ def moderate_disable(id):
 @permission_blogger.require(403)
 def article_new():
     form = PostForm()
-    if form.validate_on_submit():
-        """
-        新文章对象的 author 属性值为表达式 current_user._get_current_object()。
-        变量 current_user 由 Flask-Login 提供,和所有上下文变量一样,也是通过线程内的代理对象实现。
-        这个对象的表现类似用户对象,但实际上却是一个轻度包装,包含真正的用户对象。 
-        数据库需要真正的用户对象,因此要调用 _get_current_object() 方法。
-        """
+    if request.method == 'POST' and form.validate_on_submit():
         post = Post(title=form.title.data, intro=form.intro.data, body=form.body.data,
-                    author=current_user._get_current_object())
+                    author=current_user._get_current_object(), category=Category.query.get(form.category_name.data))
 
-        if form.category_name.data:
-            category = Category(form.category_name.data)
-            db.session.add(category)
-            db.session.commit()
-            post.category_id = category.id
-            # db.session.add(post)
         try:
             db.session.add(post)
         except Exception:

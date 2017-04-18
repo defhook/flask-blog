@@ -7,8 +7,7 @@ from wtforms import StringField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
-# from app.blog.models import Role, User
-from ..models import Role, User, Tag
+from ..models import Role, User, Category
 
 
 class NameForm(FlaskForm):
@@ -68,7 +67,8 @@ class PostForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.category_name.choices = [(tag.id, tag.name) for tag in Tag.query.order_by(Tag.name).all()]
+        self.category_name.choices = [(cg.id, cg.category_name)
+                                      for cg in Category.query.order_by(Category.category_name).all()]
 
 
 class CommentForm(FlaskForm):

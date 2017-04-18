@@ -4,10 +4,12 @@
 {% block title %}{{ show_title() }} - 写新文章{% endblock %}
 
 {%- block styles -%}
-    {{ super() }}
-    <link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='editor.md/css/editormd.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='editor.md/css/editormd.logo.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='editor.md/css/editormd.preview.min.css') }}">
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('blog.static', filename='editor.md/css/editormd.min.css') }}">
+<link rel="stylesheet" type="text/css"
+      href="{{ url_for('blog.static', filename='editor.md/css/editormd.logo.min.css') }}">
+<link rel="stylesheet" type="text/css"
+      href="{{ url_for('blog.static', filename='editor.md/css/editormd.preview.min.css') }}">
 {% endblock %}
 
 {% block page_content %}
@@ -15,7 +17,9 @@
 <div class="container-fluid">
     <div class="write-article-body">
         {% if current_user.is_blogger %}
-        {#<div class="form-write-article">{{ wtf.quick_form(form) }}</div>#}
+        {#
+        <div class="form-write-article">{{ wtf.quick_form(form) }}</div>
+        #}
         <div class="col-md-11" style="margin-bottom: 20px;margin-left: 100px;" id="article_new">
             <form action="{{url_for('blog.article_new')}}" method="post" class="form-group">
                 <div style="display: none">
@@ -26,20 +30,21 @@
                     {{ form.title(id='title', class="form-control") }}
                 </div>
                 <div class="form-group">
-                     {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
+                    {{ form.intro(id = 'intro', class='form-control', placeholder='文章摘要') }}
                 </div>
-                <div class="form-group" >
+                <div class="form-group">
                     <label for="editormd-view">文章内容</label>
                     <div id="editormd-view">
                         {{ form.body(id='body') }}
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id='cg-{{form.category_name.id}}'>
                     <label for="category_name">文章分类</label>
                     {{ form.category_name(id='category_name', class="form-control") }}
+                    <span class="help-block" id='hl-{{form.category_name.id}}'></span>
                 </div>
                 <div class="form-group">
-                    <label class="control-label" for="tags">标签</label>
+                    <label class="control-label" for="tags">文章标签</label>
 
                     <div class="input-group">
                         {{form.tags(id="tags", placeholder="以,分隔", class="form-control input-md", required="")}}
@@ -62,8 +67,8 @@
 {{ super() }}
 {{- pagedown.include_pagedown() -}}
 
-    <script src="{{ url_for('blog.static', filename='editor.md/editormd.min.js') }}" type="text/javascript"></script>
-    <script type="text/javascript">
+<script src="{{ url_for('blog.static', filename='editor.md/editormd.min.js') }}" type="text/javascript"></script>
+<script type="text/javascript">
     $(document).ready( function() {
         var editor = editormd("editormd-view", {
             path : "{{url_for('blog.static', filename='editor.md/lib/')}}" ,// Autoload modules mode, dependents libs path
@@ -92,5 +97,7 @@
         });
 
     });
-    </script>
+
+
+</script>
 {% endblock %}
