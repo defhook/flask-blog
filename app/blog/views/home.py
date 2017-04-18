@@ -16,15 +16,10 @@ from app.permissions import permission_blogger, permission_admin
 def sort_category():
     if Category.query.all():
         category = Category.query.all()
-        dict = {}
+        dict_cg = {}
         for i in category:
-            count = i.posts.count()
-            if count == 0:
-                db.session.delete(i)
-                db.session.commit()
-            else:
-                dict[i] = count
-        category = sorted(dict, key=dict.__getitem__, reverse=True)
+            dict_cg[i] = i.posts.count()
+        category = sorted(dict_cg, key=dict_cg.__getitem__, reverse=True)
         return category
 
 
@@ -321,7 +316,7 @@ def article_new():
     form = PostForm()
     if request.method == 'POST' and form.validate_on_submit():
         post = Post(title=form.title.data, intro=form.intro.data, body=form.body.data,
-                    author=current_user._get_current_object(), category=Category.query.get(form.category_name.data))
+                    author=current_user._get_current_object(), category=Category.query.get(form.category.data))
 
         try:
             db.session.add(post)
@@ -330,7 +325,7 @@ def article_new():
         else:
             db.session.commit()
         return redirect(url_for('.article'))
-    form.category_name.data = Category.query.first_or_404()
+    # form.category.data = Category.query.first_or_404()
     return render_template('article_new.html', form=form)
     # 这样修改之后,首页中的文章列表只会显示有限数量的文章。若想查看第 2 页中的文章,
     # 要在浏览器地址栏中的 URL 后加上查询字符串 ?page=2。

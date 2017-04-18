@@ -61,14 +61,14 @@ class PostForm(FlaskForm):
     intro = TextAreaField("编辑文章_简介")
     body = TextAreaField("编辑文章_正文", validators=[DataRequired()])
     body_html = TextAreaField("预览", validators=[DataRequired()])
-    category_name = SelectField('分类', coerce=int)
+    category = SelectField('分类', coerce=int)
     tags = TextAreaField("标签", validators=[DataRequired()])
     submit = SubmitField('发表文章')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.category_name.choices = [(cg.id, cg.category_name)
-                                      for cg in Category.query.order_by(Category.category_name).all()]
+        self.category.choices = [(cg.id, cg.category_name)
+                                 for cg in Category.query.order_by(Category.category_name).all()]
 
 
 class CommentForm(FlaskForm):
