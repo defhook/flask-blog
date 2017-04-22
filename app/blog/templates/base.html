@@ -93,7 +93,8 @@ OAOA的小站
 
 {% block scripts %}
 {{ super() }}
-<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>
+{#<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>#}
+<script type="text/javascript" src="{{ url_for_cdn('modernizr/2.8.3/modernizr.min.js') }}"></script>
 {{ moment.include_moment() }}
 {{- moment.lang('zh-cn') -}}
 {{ pagedown.include_pagedown() }}

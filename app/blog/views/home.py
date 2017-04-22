@@ -5,7 +5,7 @@ from __future__ import print_function, unicode_literals, absolute_import
 from flask import render_template, redirect, url_for, abort, flash, request, current_app, make_response
 from flask_login import login_required, current_user
 from flask_sqlalchemy import get_debug_queries
-from app.blog.models import Role, User, Post, Comment, Category, HomePage
+from app.blog.models import Role, User, Post, Comment, Category, HomePage, Tag
 from app import db
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
 from .. import blog
@@ -315,11 +315,12 @@ def moderate_disable(id):
 def article_new():
     form = PostForm()
     if request.method == 'POST' and form.validate_on_submit():
-        post = Post(title=form.title.data, intro=form.intro.data, body=form.body.data,
-                    author=current_user._get_current_object(), category=Category.query.get(form.category.data))
-
+        post_obj = Post(title=form.title.data, intro=form.intro.data, body=form.body.data,
+                        author=current_user._get_current_object(),
+                        category=Category.query.get(form.category.data))
+        post_obj.tags.extend([Tag.get_tag(t_n.strip()) for t_n in form.tags.data.split(',') if t_n])
         try:
-            db.session.add(post)
+            db.session.add(post_obj)
         except Exception:
             db.session.rollback()
         else:

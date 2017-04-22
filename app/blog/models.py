@@ -60,27 +60,6 @@ class User(UserMixin, db.Model):
         backref=db.backref('users', lazy='dynamic')
     )
 
-    """
-    回引中的 lazy 参数指定为 joined。这个 lazy 模式可以实现立即从联结查询中加载相关对象
-
-    例如,如果某个用户关注了 100 个用户,调用 user.followed.all() 后会返回一个列表,
-    其中包含 100 个 Follow 实例,每一个实例的 follower 和 followed 回引属性都指向相应的用户。
-    设定为 lazy='joined' 模式,就可在一次数据库查询中完成这些操作。
-    如果把 lazy 设为默认值 select,那么首次访问 follower 和 followed 属性时才会加载对应的用户,
-    而且每个属性都需要一个单独的查询,这就意味着获取全部被关注用户时需要增加 100 次额外的数据库查询。
-    """
-    # lazy 参数都在“一”这一侧设定, 返回的结果是“多”这一侧中的记录。
-    # 使用dynamic则关系属性不会直接返回记录,而是返回查询对象,所以在执行查询之前还可以添加额外的过滤器。
-    """
-    cascade 参数配置在父对象上执行的操作对相关对象的影响。
-    比如,层叠选项可设定为: 将用户添加到数据库会话后,要自动把所有关系的对象都添加到会话中。
-    层叠选项的默认值能满足大多数情况的需求,但对这个多对多关系来说却不合用。
-    删除对象时,默认的层叠行为是把对象联接的所有相关对象的外键设为空值。
-    但在关联表中,删除记录后正确的行为应该是把指向该记录的实体也删除,因为这样能有效销毁联接。这就是层叠选项值 delete-orphan 的作用。
-
-    cascade 参数的值是一组由逗号分隔的层叠选项.all 表示除了 delete-orphan 之外的所有层叠选项。
-    设为 all, delete-orphan 的意思是启用所有默认层叠选项,而且还要删除孤儿记录。
-    """
     # followed = db.relationship('Follow',
     #                            foreign_keys=[Follow.follower_id],
     #                            backref=db.backref('follower', lazy='joined'),
@@ -99,15 +78,6 @@ class User(UserMixin, db.Model):
         self.email = email
         self.password = pwd
         self.active = active
-
-    """
-    Python内置的@property装饰器就是负责把一个方法变成属性调用的.
-
-    我们在对实例属性操作的时候，就知道该属性很可能不是直接暴露的，而是通过getter和setter方法来实现的。
-    还可以定义只读属性，只定义getter方法，不定义setter方法就是一个只读属性.
-    反之就变成不可读了，是名为password的只写属性。也就是下面这里的用法。
-    如果试图读取 password 属性的值,则会返回错误,因为生成散列值后就无法还原成原来的密码了。
-    """
 
     @property
     def password(self):
@@ -389,8 +359,12 @@ class Tag(db.Model):
     def __init__(self, name):
         self.name = name.lower()
 
-    @classmethod
-    def get_tag(cls, name):
+    @staticmethod
+    def get_tag(name):
         name = name.lower()
         tag = db.session.query(Tag).filter_by(name=name).first()
+        if not tag:
+            tag = Tag(name)
+            db.session.add(tag)
+            db.session.commit()
         return tag
