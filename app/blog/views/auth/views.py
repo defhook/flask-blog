@@ -11,7 +11,7 @@ from .forms import LoginForm, RegistrationForm, ChangePasswordForm, PasswordRese
 from app import db
 from app.email import send_email
 from app.blog import blog
-from app.permissions import permission_deny
+from app.permissions import permission_deny, permission_admin
 
 
 # 登入用户，登录路由
@@ -57,6 +57,7 @@ def logout():
 
 # 用户注册路由
 @blog.route('/register', methods=['GET', 'POST'])
+@permission_admin.require(401)  # 禁止用户注册
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
