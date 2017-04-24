@@ -47,7 +47,10 @@ def __init_watchdog():
 def init_app():
     # 加载配置
     app.config.from_pyfile(os.path.join(basedir, '../config.py'))
-    app.config.from_pyfile('config_dev.py')
+    if app.config['DEBUG']:
+        app.config.from_pyfile('config_dev.py')
+    else:
+        app.config.from_pyfile('config_deploy.py')
 
     # 注册蓝图
     app.register_blueprint(blog, url_prefix='/blog')
@@ -66,12 +69,15 @@ def init_app():
     login_master.init_app(app)
     __init_watchdog()
 
-    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
+    # 补丁
+    from app import monkey_patch
+    monkey_patch.patch_bootstrap_cdn(app)
 
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
     meta.create_all(bind=engine)
     # ws.init_app(app)
 
-    if not app.config['DEBUG'] and not app.config['DEV']:
+    if not app.config['DEBUG']:
         from werkzeug.contrib.fixers import ProxyFix
         app.wsgi_app = ProxyFix(app.wsgi_app)
 
