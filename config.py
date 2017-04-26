@@ -52,7 +52,9 @@ PUBLIC_CDN_DOMAIN = 'cdn.bootcss.com'  # 公用js文件的cdn地址
 SESSION_PROTECTION = 'strong'  # strong basic None
 
 # flask-cdn
-CDN_DOMAIN = ''
+CDN_DOMAIN = 'lniwn.oschina.io/flask-blog/app/'
+CDN_ENDPOINTS = ['static', 'blog.static']
+CDN_HTTPS = False
 
 # flask-cache
 CACHE_TYPE = 'simple'

@@ -11,10 +11,10 @@ from sqlalchemy import MetaData
 from flask_cache import Cache
 from flask_mail import Mail
 from flask_bootstrap import Bootstrap
-
+from flask_cdn import CDN
 
 __all__ = ['mail_engine', 'db', 'cache', 'bootstrap', 'moment',
-           'page_down', 'principal', 'login_master', 'meta']
+           'page_down', 'principal', 'login_master', 'meta', 'cdn']
 
 mail_engine = Mail()
 db = SQLAlchemy()
@@ -25,3 +25,4 @@ page_down = PageDown()
 principal = Principal()
 login_master = LoginManager()
 meta = MetaData()
+cdn = CDN()
