@@ -53,7 +53,7 @@ SESSION_PROTECTION = 'strong'  # strong basic None
 
 # flask-cdn
 CDN_DOMAIN = 'lniwn.oschina.io/flask-blog/app'
-CDN_ENDPOINTS = ['static', 'blog.static']
+CDN_ENDPOINTS = ['static']
 CDN_HTTPS = False
 
 # flask-cache

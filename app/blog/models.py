@@ -15,7 +15,7 @@ from app.extensions import db
 from app.permissions import permission_admin, permission_moderator, permission_blogger
 import bleach
 import hashlib
-import urllib
+
 
 users_roles = db.Table('users_roles',
                        # meta,
@@ -160,13 +160,7 @@ class User(UserMixin, db.Model):
     def avatar(self):
         # Set your variables here
         email = self.email
-        default = 'monsterid'
-        size = 40
-
-        # construct the url
-        gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(email.lower().encode('utf-8')).hexdigest() + "?"
-        gravatar_url += urllib.parse.urlencode({'d':default, 's':str(size)})
-        return gravatar_url
+        return hashlib.md5(email.lower().encode('utf-8')).hexdigest()
 
     def __repr__(self):
         return '<User %r>' % self.username

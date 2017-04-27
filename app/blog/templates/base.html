@@ -58,7 +58,8 @@ OAOA的小站
                 {% if current_user.is_authenticated %}
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <img class="img-rounded navbar-avatar" src="{{ current_user.avatar }}">
+                        <img class="img-rounded navbar-avatar" id="user_avatar_thumb"
+                             src="{# url_for('blog.static', filename='img/favicon.ico') #}">
                         {{ current_user.username }} <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">
@@ -87,10 +88,16 @@ OAOA的小站
 
 {% block scripts %}
 {{ super() }}
-{#<script type="text/javascript" src="{{ url_for('blog.static', filename='js/modernizr.js') }}"></script>#}
 <script type="text/javascript" src="{{ url_for_cdn('modernizr/2.8.3/modernizr.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for_cdn('identicon.js/2.1.0/pnglib.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for_cdn('identicon.js/2.1.0/identicon.min.js') }}"></script>
 {{ moment.include_moment() }}
 {{- moment.lang('zh-cn') -}}
 {{ pagedown.include_pagedown() }}
+
+<script type="text/javascript">
+    var data = new Identicon('{{ current_user.avatar }}', 40).toString();
+    $("#user_avatar_thumb")[0].src='data:image/png;base64,' + data;
+</script>
 {% endblock %}
 
