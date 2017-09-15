@@ -29,6 +29,7 @@ ROTATING_LOG_PATH = ''
 PREFERRED_URL_SCHEME = 'http'
 BOOTSTRAP_CDN_FORCE_SSL = False
 # SERVER_NAME = 'oaoa.me'
+TEMPLATES_AUTO_RELOAD = True
 
 # custom
 MAIL_SERVER = 'smtp.qq.com'
