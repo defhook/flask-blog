@@ -91,7 +91,7 @@ OAOA的小站
 <script type="text/javascript" src="{{ url_for_cdn('modernizr/2.8.3/modernizr.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for_cdn('identicon.js/2.1.0/pnglib.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for_cdn('identicon.js/2.1.0/identicon.min.js') }}"></script>
-{{ moment.include_moment() }}
+{{ moment.include_moment(local_js=url_for_cdn('moment.js/2.18.1/moment.min.js')) }}
 {{- moment.lang('zh-cn') -}}
 {{ pagedown.include_pagedown() }}
 
