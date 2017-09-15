@@ -11,7 +11,7 @@ import os.path
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(basedir, 'static/img'),
-                               'favicon.svg', mimetype='image/svg+xml')
+                               'favicon.ico')
 
 
 @app.route('/')

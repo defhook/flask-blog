@@ -96,8 +96,12 @@ OAOA的小站
 {{ pagedown.include_pagedown() }}
 
 <script type="text/javascript">
-    var data = new Identicon('{{ current_user.avatar }}', 40).toString();
-    $("#user_avatar_thumb")[0].src='data:image/png;base64,' + data;
+    var user_avatar_thumb = $("#user_avatar_thumb")[0];
+    if(user_avatar_thumb)
+    {
+        var data = new Identicon('{{ current_user.avatar }}', 40).toString();
+        user_avatar_thumb.src='data:image/png;base64,' + data;
+    }
 </script>
 {% endblock %}
 
