@@ -67,7 +67,7 @@ def init_app():
     page_down.init_app(app)
     principal.init_app(app)
     login_master.init_app(app)
-    cdn.init_app(app)
+    # cdn.init_app(app)
     __init_watchdog()
 
     # 补丁

@@ -5,7 +5,7 @@
 """
 from __future__ import print_function, unicode_literals, absolute_import
 
-DEBUG = True
+DEBUG = False
 
 # database
 SQLALCHEMY_DATABASE_URI = ''
@@ -29,6 +29,7 @@ ROTATING_LOG_PATH = ''
 PREFERRED_URL_SCHEME = 'http'
 BOOTSTRAP_CDN_FORCE_SSL = False
 # SERVER_NAME = 'oaoa.me'
+TEMPLATES_AUTO_RELOAD = True
 
 # custom
 MAIL_SERVER = 'smtp.qq.com'
@@ -52,8 +53,8 @@ PUBLIC_CDN_DOMAIN = 'cdn.bootcss.com'  # 公用js文件的cdn地址
 SESSION_PROTECTION = 'strong'  # strong basic None
 
 # flask-cdn
-CDN_DOMAIN = 'lniwn.oschina.io/flask-blog/app/'
-CDN_ENDPOINTS = ['static', 'blog.static']
+CDN_DOMAIN = 'lniwn.oschina.io/flask-blog/app'
+CDN_ENDPOINTS = ['static']
 CDN_HTTPS = False
 
 # flask-cache

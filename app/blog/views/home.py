@@ -6,7 +6,7 @@ from flask import render_template, redirect, url_for, abort, flash, request, cur
 from flask_login import login_required, current_user
 from flask_sqlalchemy import get_debug_queries
 from app.blog.models import Role, User, Post, Comment, Category, HomePage, Tag
-from app import db
+from app import db, cache
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
 from .. import blog
 from app.permissions import permission_blogger, permission_admin
@@ -333,6 +333,7 @@ def article_new():
 
 
 @blog.route('/article', methods=['GET', 'POST'])
+@cache.cached(timeout=120, key_prefix='home/%s')
 def article():
     page = request.args.get('page', 1, type=int)
     query = Post.query
@@ -394,15 +395,18 @@ def delete_comment(id):
 
 
 @blog.route('/resume')
+@cache.cached(timeout=120, key_prefix='home/%s')
 def resume():
     return render_template('resume.html')
 
 
 @blog.route('/contact')
+@cache.cached(timeout=120, key_prefix='home/%s')
 def contact():
     return render_template('contact.html')
 
 
 @blog.route('/lab')
+@cache.cached(timeout=120, key_prefix='home/%s')
 def lab():
     return render_template('lab.html')
