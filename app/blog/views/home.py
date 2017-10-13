@@ -149,7 +149,7 @@ def edit_profile_admin(id):
 
 # 博客文章的 URL 使用插入数据库时分配的唯一 id 字段构建
 @blog.route('/post/<int:id>', methods=['GET', 'POST'])
-@permission_blogger.require(403)
+# @permission_blogger.require(403)
 def post(id):
     post = Post.query.get_or_404(id)
     post.body_show = True
