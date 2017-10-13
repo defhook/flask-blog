@@ -23,8 +23,8 @@
             {% if current_user.is_authenticated %}
             <div class="comment-form">{{ wtf.quick_form(form) }}</div>
             {% else %}
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">登陆后评论</a>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-default">注册</a>
+            <a href="{{ url_for('blog.login') }}" class="btn btn-primary">登陆后评论</a>
+            <a href="{{ url_for('blog.register') }}" class="btn btn-default">注册</a>
             {% endif %}
 
             {% include '_comments.html' %}

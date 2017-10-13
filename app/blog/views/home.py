@@ -225,10 +225,11 @@ def edit(id):
         post.title = form.title.data
         post.intro = form.intro.data
         post.body = form.body.data
-        if form.category_name.data:
-            category_name_exists = Category.query.filter_by(category_name=form.category_name.data).first()
+        post.tags = [Tag.get_tag(t_n.strip()) for t_n in form.tags.data.split(',') if t_n]
+        if form.category.data:
+            category_name_exists = Category.query.filter_by(category_name=form.category.data).first()
             if not category_name_exists:
-                category = Category(form.category_name.data)
+                category = Category(form.category.data)
                 db.session.add(category)
                 db.session.commit()
                 post.category_id = category.id
@@ -241,9 +242,10 @@ def edit(id):
     form.title.data = post.title
     form.intro.data = post.intro
     form.body.data = post.body
+    form.tags.data = ','.join([tag.name for tag in post.tags])
     if post.category_id:
         category = Category.query.filter_by(id=post.category.id).first()
-        form.category_name.data = category.category_name
+        form.category.data = category.category_name
     return render_template('edit_post.html', form=form, post=post)
 
 
